@@ -445,6 +445,21 @@
         <button class="btn" onclick="submitCreateBall()">Crear Ball</button>
       </div>
     </div>
+  <!-- Modal para Confirmar Acción -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span style="font-size: 1.5rem;" id="confirmIcon">⚠️</span>
+        <h3 id="confirmTitle">Confirmar Acción</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage">¿Estás seguro de continuar?</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancelar</button>
+        <button class="btn btn-danger" id="confirmSubmitBtn">Confirmar</button>
+      </div>
+    </div>
   </div>
 
   <!-- Modal de Bienvenida y Autenticación Móvil / Web -->
@@ -807,32 +822,80 @@
     }
 
     async function deleteObject(key) {
-      if (!confirm(`¿Eliminar permanentemente '${key}'?`)) return;
-      const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
-      const release = await relRes.json();
-      const asset = (release.assets || []).find(a => a.name === key);
-      if (asset) {
-        await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${asset.id}`, { method: 'DELETE' });
-      }
-      loadObjects(activeBall);
+      document.getElementById('confirmTitle').innerText = 'Eliminar Objeto';
+      document.getElementById('confirmMessage').innerText = `¿Eliminar permanentemente el objeto '${key}' de '${activeBall}'?`;
+      document.getElementById('confirmSubmitBtn').onclick = async () => {
+        closeModal('confirmModal');
+        try {
+          const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
+          const release = await relRes.json();
+          const assets = release.assets || [];
+
+          // 1. Delete object asset from Release
+          const asset = assets.find(a => a.name === key);
+          if (asset) {
+            await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${asset.id}`, { method: 'DELETE' });
+          }
+
+          // 2. Fetch current manifest, remove object key and upload updated manifest
+          let manifest = { bucket: activeBall, objects: {} };
+          const manifestAsset = assets.find(a => a.name === '_manifest.json');
+          if (manifestAsset) {
+            try {
+              const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${manifestAsset.id}`)}&_t=${Date.now()}`;
+              const mRes = await fetch(proxyUrl, {
+                headers: { 'Authorization': `token ${token}`, 'Accept': 'application/octet-stream' }
+              });
+              if (mRes.ok) manifest = await mRes.json();
+            } catch (e) {}
+
+            // Delete old manifest asset
+            await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${manifestAsset.id}`, { method: 'DELETE' });
+          }
+
+          if (manifest.objects && manifest.objects[key]) {
+            delete manifest.objects[key];
+          }
+
+          // Save updated manifest
+          const rawManifestUploadUrl = release.upload_url.replace('{?name,label}', '?name=_manifest.json');
+          const manifestProxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(rawManifestUploadUrl)}`;
+          await fetch(manifestProxyUrl, {
+            method: 'POST',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(manifest, null, 2)
+          });
+        } catch (err) {
+          alert('Error al eliminar objeto: ' + err.message);
+        }
+        loadObjects(activeBall);
+      };
+      document.getElementById('confirmModal').classList.add('active');
     }
 
     async function openDeleteBallModal() {
-      if (!activeBall || !confirm(`¿Eliminar completamente la Rolla-Ball '${activeBall}'? Esta acción no se puede deshacer.`)) return;
+      if (!activeBall) return;
+      document.getElementById('confirmTitle').innerText = 'Eliminar Rolla-Ball';
+      document.getElementById('confirmMessage').innerText = `¿Eliminar completamente la Rolla-Ball '${activeBall}' y todos sus objetos contenidos? Esta acción no se puede deshacer.`;
+      document.getElementById('confirmSubmitBtn').onclick = async () => {
+        closeModal('confirmModal');
+        try {
+          const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
+          if (relRes.ok) {
+            const release = await relRes.json();
+            await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/${release.id}`, { method: 'DELETE' });
+          }
+          await GH(`https://api.github.com/repos/${owner}/${REPO}/git/refs/tags/${ballTag(activeBall)}`, { method: 'DELETE' });
+        } catch (e) {}
 
-      const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
-      if (relRes.ok) {
-        const release = await relRes.json();
-        await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/${release.id}`, { method: 'DELETE' });
-      }
-      await GH(`https://api.github.com/repos/${owner}/${REPO}/git/refs/tags/${ballTag(activeBall)}`, { method: 'DELETE' });
-
-      activeBall = null;
-      document.getElementById('currentBallTitle').innerText = 'Selecciona una Rolla-Ball';
-      document.getElementById('ballActions').style.display = 'none';
-      document.getElementById('uploadSection').style.display = 'none';
-      document.getElementById('objectsContainer').innerHTML = `<div class="empty-state"><h3>Rolla-Ball eliminada</h3></div>`;
-      loadBalls();
+        activeBall = null;
+        document.getElementById('currentBallTitle').innerText = 'Selecciona una Rolla-Ball';
+        document.getElementById('ballActions').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('objectsContainer').innerHTML = `<div class="empty-state"><h3>Rolla-Ball eliminada</h3></div>`;
+        loadBalls();
+      };
+      document.getElementById('confirmModal').classList.add('active');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
