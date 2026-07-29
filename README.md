@@ -5,9 +5,10 @@
   # 📦 ROLLA STORAGE ENGINE
   ### *Motor de Almacenamiento de Objetos Inmutable e Ilimitado a Coste $0*
 
-  [![Ecosistema Terra](https://img.shields.io/badge/Ecosistema-Terra-84cc16?style=for-the-badge&logo=planetScale&logoColor=white)](https://github.com/amglogicalis/Terra)
+  [![npm version](https://img.shields.io/npm/v/terra-rolla.svg?style=for-the-badge&logo=npm&logoColor=white&color=84cc16)](https://www.npmjs.com/package/terra-rolla)
+  [![Ecosistema Terra](https://img.shields.io/badge/Ecosistema-Terra-blue?style=for-the-badge&logo=planetScale&logoColor=white)](https://github.com/amglogicalis/Terra)
   [![Consola Web 24/7](https://img.shields.io/badge/Consola%20Web-Desplegada-2ea043?style=for-the-badge&logo=github&logoColor=white)](https://amglogicalis.github.io/rolla-repo-public/)
-  [![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-blue.style=for-the-badge)](LICENSE)
+  [![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-purple?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 </div>
 
@@ -15,7 +16,21 @@
 
 ## 📌 Visión General
 
-**Rolla** (`@terra/rolla`) es un motor de almacenamiento de objetos inmutable de alto rendimiento (estilo AWS S3) diseñado para el ecosistema **Terra**. Utiliza la infraestructura global de **GitHub Releases & Assets** alojada en la nube de GitHub sobre un repositorio privado (`.rolla-storage`) para ofrecer espacio de almacenamiento ilimitado a **coste $0** sin saturar ramas ni repositorios Git.
+**Rolla** (`terra-rolla`) es un motor de almacenamiento de objetos inmutable de alto rendimiento (estilo AWS S3) diseñado para el ecosistema **Terra**. Utiliza la infraestructura global de **GitHub Releases & Assets** alojada en la nube de GitHub sobre un repositorio privado (`.rolla-storage`) para ofrecer espacio de almacenamiento ilimitado a **coste $0** sin saturar ramas ni repositorios Git.
+
+---
+
+## 🚀 Instalación Rápida
+
+### 🌐 Instalación Global de la CLI (Terminal):
+```bash
+npm install -g terra-rolla
+```
+
+### 📦 Instalación en Proyectos (SDK TypeScript / JavaScript):
+```bash
+npm install terra-rolla
+```
 
 ---
 
@@ -39,25 +54,25 @@
 
 ---
 
-## 💻 Todos los Comandos del CLI (`npx rolla`)
+## 💻 Todos los Comandos del CLI (`rolla`)
 
-La herramienta CLI de **Rolla** permite gestionar tus objetos y lanzar consolas de desarrollo con una serie de comandos flexibles:
+La herramienta CLI de **Rolla** permite gestionar tus objetos y lanzar consolas de desarrollo desde cualquier terminal:
 
 | Comando | Descripción | Ejemplo de Uso |
 | :--- | :--- | :--- |
-| `npx rolla console` | **Lanza la Consola Web local** en tu navegador (`http://localhost:3000`). | `npx rolla console` |
-| `npx rolla console --logs` | Lanza la consola web local mostrando en terminal los **logs detallados** de peticiones HTTP, eventos y errores. | `npx rolla console --logs` |
-| `npx rolla console --port <puerto>` | Especifica un **puerto personalizado** para la consola web en caso de conflicto. | `npx rolla console --port 8080` |
-| `npx rolla list` | **Lista todas las Rolla-Balls (buckets)** existentes en tu cuenta. | `npx rolla list` |
-| `npx rolla create <ball-name>` | **Crea una nueva Rolla-Ball** en la nube. | `npx rolla create fotos-2026` |
-| `npx rolla delete <ball-name>` | **Elimina una Rolla-Ball** y todos los objetos contenidos. | `npx rolla delete fotos-2026` |
-| `npx rolla ls <ball-name>` | **Lista los objetos y archivos** dentro de una Rolla-Ball específica. | `npx rolla ls fotos-2026` |
-| `npx rolla put <ball-name> <file-path>` | **Subir un archivo** a la Rolla-Ball especificada. | `npx rolla put fotos-2026 ./imagen.png` |
-| `npx rolla get <ball-name> <key> [dest]` | **Descarga un objeto** desde una Rolla-Ball a tu disco local. | `npx rolla get fotos-2026 imagen.png ./foto.png` |
+| `rolla console` | **Lanza la Consola Web local** en tu navegador (`http://localhost:3000`). | `rolla console` |
+| `rolla console --logs` | Lanza la consola web local mostrando en terminal los **logs detallados** de peticiones HTTP, eventos y errores. | `rolla console --logs` |
+| `rolla console --port <puerto>` | Especifica un **puerto personalizado** para la consola web en caso de conflicto. | `rolla console --port 8080` |
+| `rolla ls` | **Lista todas las Rolla-Balls (buckets)** existentes en tu cuenta. | `rolla ls` |
+| `rolla create <ball-name>` | **Crea una nueva Rolla-Ball** en la nube. | `rolla create fotos-2026` |
+| `rolla rm <ball-name>` | **Elimina una Rolla-Ball** y todos los objetos contenidos. | `rolla rm fotos-2026` |
+| `rolla ls <ball-name>` | **Lista los objetos y archivos** dentro de una Rolla-Ball específica. | `rolla ls fotos-2026` |
+| `rolla upload <ball-name> <file-path>` | **Subir un archivo** a la Rolla-Ball especificada. | `rolla upload fotos-2026 ./imagen.png` |
+| `rolla rm <ball-name> <key>` | **Elimina un objeto** de una Rolla-Ball. | `rolla rm fotos-2026 imagen.png` |
 
 ---
 
-## 🌐 Uso desde la Consola Web (GitHub Pages)
+## 🌐 Uso desde la Consola Web Estática (GitHub Pages)
 
 Accede a la Consola Web desplegada 24/7 desde cualquier navegador de ordenador o teléfono móvil:
 
@@ -72,14 +87,14 @@ Accede a la Consola Web desplegada 24/7 desde cualquier navegador de ordenador o
 ## 🚀 Uso desde el SDK (TypeScript / JavaScript)
 
 ```bash
-npm install @terra/rolla
+npm install terra-rolla
 ```
 
 ```typescript
-import { Rolla } from '@terra/rolla';
+import { Rolla } from 'terra-rolla';
 
 const rolla = new Rolla({
-  githubToken: process.env.ROLLA_PAT
+  githubToken: process.env.GITHUB_TOKEN // Tu GitHub PAT con permisos de repo
 });
 
 // 1. Crear un contenedor (Rolla-Ball)
@@ -102,7 +117,7 @@ const buffer = await rolla.getObject('imagenes-prod', 'fotografia.png');
 
 ## 📜 Licencia
 
-Este proyecto está distribuido bajo la **Licencia MIT**. Siéntete libre de modificarlo, distribuirlo y usarlo en tus aplicaciones privadas o comerciales. Consulta el archivo [`LICENSE`](LICENSE) para más detalles.
+Este proyecto está distribuido bajo la **Licencia MIT**. Siéntete libre de modificarlo, distribuirlo y usarlo en tus aplicaciones privadas o comerciales.
 
 ---
 
