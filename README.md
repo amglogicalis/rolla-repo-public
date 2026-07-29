@@ -46,6 +46,7 @@ npm install terra-rolla
 
 - ♾️ **Coste $0 y Almacenamiento Ilimitado**: Aprovecha la CDN de Releases de GitHub sin cuotas de subida ni suscripciones.
 - 📦 **Rolla-Balls (Buckets)**: Mapeadas internamente como Releases firmadas con tags git `rolla-bkt-<nombre>`.
+- 🔄 **Versionado Automático de Objetos (v1.1.0)**: Al volver a subir un objeto con el mismo nombre, se guarda un historial inmutable de versiones permitiendo recuperar cualquier versión previa.
 - ⚡ **Sincronización Instantánea**: Consulta de tags vía Git Refs (`/git/refs/tags`) eliminando latencias de caché.
 - 🧩 **Automatic Chunking (>2 GB)**: División y ensamblado transparente para archivos gigantescos.
 - 🌐 **Consola Web Estática (GitHub Pages)**: Interfaz cliente 24/7 totalmente responsive para PC y dispositivos móviles.
@@ -81,6 +82,7 @@ Accede a la Consola Web desplegada 24/7 desde cualquier navegador de ordenador o
 1. Ingresa tu **GitHub Personal Access Token (PAT)** con permisos de `repo`.
 2. Crea tus **Rolla-Balls** de forma visual.
 3. Arrastra y sube archivos o imágenes sin límites de tamaño ni errores CORS.
+4. Visualiza los distintivos de **versiones acumuladas** en cada objeto.
 
 ---
 
@@ -105,12 +107,23 @@ await rolla.putObject('imagenes-prod', 'fotografia.png', bufferData, {
   contentType: 'image/png'
 });
 
-// 3. Listar archivos
+// 3. Listar archivos (devuelve la versión más reciente por defecto)
 const objects = await rolla.listObjects('imagenes-prod');
 console.log(objects);
 
-// 4. Descargar archivo
+// 4. Descargar la última versión del archivo
 const buffer = await rolla.getObject('imagenes-prod', 'fotografia.png');
+
+// 5. Historial de Versiones (Object Versioning)
+// Al re-subir un objeto con el mismo nombre, Rolla guarda automáticamente las versiones sin sobrescribir las anteriores
+await rolla.putObject('imagenes-prod', 'fotografia.png', nuevoBufferData);
+
+// Listar todas las versiones de un objeto
+const versiones = await rolla.listObjectVersions('imagenes-prod', 'fotografia.png');
+console.log(versiones);
+
+// Descargar una versión específica antigua usando su versionId
+const bufferV1 = await rolla.getObject('imagenes-prod', 'fotografia.png', { versionId: versiones[0].versionId });
 ```
 
 ---
