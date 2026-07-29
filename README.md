@@ -22,14 +22,14 @@
 ## 📸 Vista Previa de la Consola Web
 
 <div align="center">
-  <img src="rolla_console_preview.png" alt="Rolla Web Console Preview" width="100%" style="border-radius: 12px; border: 1px solid rgba(132, 204, 22, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+  <img src="cap_preview_console_web.PNG" alt="Rolla Web Console Interface Preview" width="100%" style="border-radius: 12px; border: 1px solid rgba(132, 204, 22, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 </div>
 
 ---
 
 ## 🌟 Características Destacadas
 
-- ♾️ **Coste $0 e Almacenamiento Ilimitado**: Aprovecha la CDN de Releases de GitHub sin cuotas de subida ni suscripciones.
+- ♾️ **Coste $0 y Almacenamiento Ilimitado**: Aprovecha la CDN de Releases de GitHub sin cuotas de subida ni suscripciones.
 - 📦 **Rolla-Balls (Buckets)**: Mapeadas internamente como Releases firmadas con tags git `rolla-bkt-<nombre>`.
 - ⚡ **Sincronización Instantánea**: Consulta de tags vía Git Refs (`/git/refs/tags`) eliminando latencias de caché.
 - 🧩 **Automatic Chunking (>2 GB)**: División y ensamblado transparente para archivos gigantescos.
@@ -39,17 +39,21 @@
 
 ---
 
-## 💻 Uso desde el CLI (Consola Local)
+## 💻 Todos los Comandos del CLI (`npx rolla`)
 
-Puedes lanzar la Consola Web local o interactuar mediante la herramienta de comandos `rolla`:
+La herramienta CLI de **Rolla** permite gestionar tus objetos y lanzar consolas de desarrollo con una serie de comandos flexibles:
 
-```bash
-# Lanzar la Consola Web Local de Rolla
-npx rolla console
-
-# Opción con logs detallados de depuración
-npx rolla console --logs
-```
+| Comando | Descripción | Ejemplo de Uso |
+| :--- | :--- | :--- |
+| `npx rolla console` | **Lanza la Consola Web local** en tu navegador (`http://localhost:3000`). | `npx rolla console` |
+| `npx rolla console --logs` | Lanza la consola web local mostrando en terminal los **logs detallados** de peticiones HTTP, eventos y errores. | `npx rolla console --logs` |
+| `npx rolla console --port <puerto>` | Especifica un **puerto personalizado** para la consola web en caso de conflicto. | `npx rolla console --port 8080` |
+| `npx rolla list` | **Lista todas las Rolla-Balls (buckets)** existentes en tu cuenta. | `npx rolla list` |
+| `npx rolla create <ball-name>` | **Crea una nueva Rolla-Ball** en la nube. | `npx rolla create fotos-2026` |
+| `npx rolla delete <ball-name>` | **Elimina una Rolla-Ball** y todos los objetos contenidos. | `npx rolla delete fotos-2026` |
+| `npx rolla ls <ball-name>` | **Lista los objetos y archivos** dentro de una Rolla-Ball específica. | `npx rolla ls fotos-2026` |
+| `npx rolla put <ball-name> <file-path>` | **Subir un archivo** a la Rolla-Ball especificada. | `npx rolla put fotos-2026 ./imagen.png` |
+| `npx rolla get <ball-name> <key> [dest]` | **Descarga un objeto** desde una Rolla-Ball a tu disco local. | `npx rolla get fotos-2026 imagen.png ./foto.png` |
 
 ---
 
@@ -98,7 +102,7 @@ const buffer = await rolla.getObject('imagenes-prod', 'fotografia.png');
 
 ## 📜 Licencia
 
-Este proyecto está distribuido bajo la **Licencia MIT**. Siéntete libre de modificarlo, distribuirlo y usarlo en tus aplicaciones privadas o comerciales. Consulta el archivo `LICENSE` para más detalles.
+Este proyecto está distribuido bajo la **Licencia MIT**. Siéntete libre de modificarlo, distribuirlo y usarlo en tus aplicaciones privadas o comerciales. Consulta el archivo [`LICENSE`](LICENSE) para más detalles.
 
 ---
 

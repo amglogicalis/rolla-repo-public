@@ -445,6 +445,8 @@
         <button class="btn" onclick="submitCreateBall()">Crear Ball</button>
       </div>
     </div>
+  </div>
+
   <!-- Modal para Confirmar Acción -->
   <div class="modal-overlay" id="confirmModal">
     <div class="modal-box">
@@ -826,6 +828,9 @@
       document.getElementById('confirmMessage').innerText = `¿Eliminar permanentemente el objeto '${key}' de '${activeBall}'?`;
       document.getElementById('confirmSubmitBtn').onclick = async () => {
         closeModal('confirmModal');
+        const container = document.getElementById('objectsContainer');
+        container.innerHTML = `<div style="color: var(--danger); padding: 2rem; text-align: center; font-weight: 600;">🗑️ Eliminando '${key}' y actualizando metadatos...</div>`;
+
         try {
           const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
           const release = await relRes.json();
