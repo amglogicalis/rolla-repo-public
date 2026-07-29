@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rolla Storage Console — Terra Ecosystem</title>
+  <link rel="icon" type="image/png" href="/rola_icon_web.png">
+  <link rel="shortcut icon" type="image/png" href="/rola_icon_web.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #0d1117;
+      --bg-card: rgba(22, 27, 34, 0.85);
+      --bg-card-hover: rgba(33, 38, 45, 0.95);
+      --border-color: rgba(48, 54, 61, 0.8);
+      --border-accent: rgba(132, 204, 22, 0.4);
+      --rolla-green: #84cc16;
+      --rolla-green-glow: rgba(132, 204, 22, 0.25);
+      --rolla-green-dark: #4d7c0f;
+      --text-main: #f0f6fc;
+      --text-muted: #8b949e;
+      --danger: #f85149;
+      --glass-overlay: rgba(13, 17, 23, 0.75);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body {
+      font-family: 'Outfit', sans-serif;
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(132, 204, 22, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: rgba(13, 17, 23, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .brand img {
+      height: 42px;
+      width: 42px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 10px var(--rolla-green-glow));
+    }
+
+    .brand h1 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #a3e635, #84cc16);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand .subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .status-badges {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    .badge {
+      background: rgba(132, 204, 22, 0.12);
+      color: var(--rolla-green);
+      border: 1px solid rgba(132, 204, 22, 0.3);
+      padding: 0.35rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--rolla-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--rolla-green);
+    }
+
+    main {
+      flex: 1;
+      max-width: 1400px;
+      width: 100%;
+      margin: 2rem auto;
+      padding: 0 2rem;
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, #84cc16, #65a30d);
+      color: #000;
+      border: none;
+      padding: 0.6rem 1.2rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 4px 12px var(--rolla-green-glow);
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(132, 204, 22, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(139, 148, 158, 0.15);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(139, 148, 158, 0.25);
+      box-shadow: none;
+    }
+
+    .btn-danger {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      box-shadow: none;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger);
+      color: white;
+      box-shadow: 0 4px 12px rgba(248, 81, 73, 0.3);
+    }
+
+    .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.78rem; }
+
+    /* Balls Sidebar */
+    .ball-item {
+      padding: 0.85rem 1.1rem;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-bottom: 0.6rem;
+      border: 1px solid transparent;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.2s ease;
+      background: rgba(22, 27, 34, 0.5);
+    }
+
+    .ball-item:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(132, 204, 22, 0.2);
+    }
+
+    .ball-item.active {
+      background: rgba(132, 204, 22, 0.12);
+      border-color: var(--rolla-green);
+      box-shadow: 0 0 15px var(--rolla-green-glow);
+    }
+
+    .ball-name {
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.95rem;
+    }
+
+    /* Objects Table */
+    .table-responsive {
+      overflow-x: auto;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      padding: 0.9rem 1.2rem;
+      background: rgba(13, 17, 23, 0.8);
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 1rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(33, 38, 45, 0.5); }
+
+    .key-cell {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: #a3e635;
+      font-size: 0.9rem;
+    }
+
+    .meta-tag {
+      background: rgba(139, 92, 246, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+
+    .upload-zone {
+      border: 2px dashed var(--border-accent);
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 1.75rem;
+      background: rgba(132, 204, 22, 0.03);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--rolla-green);
+      background: rgba(132, 204, 22, 0.08);
+      box-shadow: 0 0 20px var(--rolla-green-glow);
+    }
+
+    #fileInput { display: none; }
+
+    .empty-state {
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+
+    .empty-state h3 {
+      color: var(--text-main);
+      margin-bottom: 0.5rem;
+    }
+
+    /* Modal Estilizado de la Marca */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--glass-overlay);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #161b22;
+      border: 1px solid var(--border-accent);
+      border-radius: 16px;
+      padding: 2rem;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px var(--rolla-green-glow);
+      transform: scale(0.95);
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-header h3 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .modal-body {
+      margin-bottom: 1.5rem;
+    }
+
+    .modal-body p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .input-field {
+      width: 100%;
+      background: rgba(13, 17, 23, 0.9);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .input-field:focus {
+      border-color: var(--rolla-green);
+      box-shadow: 0 0 10px var(--rolla-green-glow);
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="brand">
+      <img src="/rolla_logo.png" alt="Rolla Logo" onerror="this.src='https://raw.githubusercontent.com/amglogicalis/rolla-repo-public/main/rolla_logo.png'" />
+      <div>
+        <h1>Rolla Console</h1>
+        <div class="subtitle">Terra Ecosystem Object Storage</div>
+      </div>
+    </div>
+    <div class="status-badges">
+      <span class="badge"><span class="badge-dot"></span> Infra: $0</span>
+      <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">Repo: .rolla-storage</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Sidebar: Rolla-Balls -->
+    <section class="card">
+      <div class="card-title">
+        <span>Rolla-Balls</span>
+        <button class="btn btn-sm" onclick="openCreateBallModal()">+ Crear Ball</button>
+      </div>
+      <div id="ballsList">
+        <div style="color: var(--text-muted); font-size: 0.85rem; padding: 1rem 0;">Cargando Rolla-Balls...</div>
+      </div>
+    </section>
+
+    <!-- Main Content: Objects in Selected Ball -->
+    <section class="card">
+      <div class="card-title">
+        <span id="currentBallTitle">Selecciona una Rolla-Ball</span>
+        <div id="ballActions" style="display: none; gap: 0.5rem;">
+          <button class="btn btn-danger btn-sm" onclick="openDeleteBallModal()">Eliminar Ball</button>
+        </div>
+      </div>
+
+      <div id="uploadSection" style="display: none;">
+        <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+          <span style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem;">📦</span>
+          <span style="font-size: 1.05rem; font-weight: 600; color: var(--text-main);">Sube o arrastra uno o varios archivos a esta Rolla-Ball</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Soporte ilimitado de tamaño (Chunking > 2GB automático)</span>
+          <input type="file" id="fileInput" multiple onchange="uploadFiles(this.files)">
+        </div>
+      </div>
+
+      <div id="objectsContainer">
+        <div class="empty-state">
+          <h3>No hay Rolla-Ball seleccionada</h3>
+          <p>Selecciona una Rolla-Ball del menú lateral para gestionar sus objetos.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal para Crear Rolla-Ball -->
+  <div class="modal-overlay" id="createBallModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span style="font-size: 1.5rem;">✨</span>
+        <h3>Crear Nueva Rolla-Ball</h3>
+      </div>
+      <div class="modal-body">
+        <p>Introduce un nombre para el nuevo contenedor de almacenamiento de objetos:</p>
+        <input type="text" id="newBallInput" class="input-field" placeholder="ej. imagenes-prod, videos-backup..." onkeyup="if(event.key==='Enter') submitCreateBall()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('createBallModal')">Cancelar</button>
+        <button class="btn" onclick="submitCreateBall()">Crear Ball</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Confirmar Eliminación -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span style="font-size: 1.5rem;">⚠️</span>
+        <h3 id="confirmTitle">Confirmar Acción</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirmMessage">¿Estás seguro de continuar?</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancelar</button>
+        <button class="btn btn-danger" id="confirmSubmitBtn">Confirmar</button>
+      </div>
+    </div>
+  <!-- Modal de Bienvenida y Autenticación Móvil / Web -->
+  <div class="modal-overlay" id="authModal">
+    <div class="modal-box" style="max-width: 480px; text-align: center;">
+      <div style="margin-bottom: 1rem;">
+        <img src="/rolla_logo.png" alt="Rolla" style="height: 56px; width: 56px; filter: drop-shadow(0 0 12px var(--rolla-green-glow));" onerror="this.src='https://raw.githubusercontent.com/amglogicalis/rolla-repo-public/main/rolla_logo.png'">
+      </div>
+      <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Bienvenido a Rolla Storage</h3>
+      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem;">
+        Almacenamiento de objetos ilimitado a coste $0. Para gestionar tus Rolla-Balls desde tu móvil o web, vincula tu cuenta de GitHub.
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.25rem;">
+        <a href="https://github.com/signup" target="_blank" class="btn btn-secondary" style="justify-content: center; text-decoration: none; padding: 0.75rem;">
+          👤 ¿No tienes cuenta? Regístrate en GitHub (Gratis)
+        </a>
+        <a href="https://github.com/settings/tokens/new?scopes=repo&description=Rolla+Storage+Token" target="_blank" class="btn" style="justify-content: center; text-decoration: none; padding: 0.75rem; background: linear-gradient(135deg, #2ea043, #238636); color: white; box-shadow: 0 4px 12px rgba(46, 160, 67, 0.3);">
+          🔑 Conectar con GitHub (Generar Token en 1-Clic)
+        </a>
+      </div>
+
+      <div style="text-align: left; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+        <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 0.4rem;">Pega tu GitHub Personal Access Token (PAT):</label>
+        <div style="display: flex; gap: 0.5rem;">
+          <input type="password" id="patInput" class="input-field" placeholder="ghp_xxxxxxxxxxxx" onkeyup="if(event.key==='Enter') savePat()">
+          <button class="btn" onclick="savePat()">Guardar</button>
+        </div>
+        <span style="font-size: 0.72rem; color: var(--text-muted); display: block; margin-top: 0.4rem;">🔒 Tu token se almacena únicamente en tu dispositivo. Jamás pasa por servidores externos.</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeBall = null;
+
+    async function loadBalls() {
+      const res = await fetch('/api/balls');
+      const balls = await res.json();
+      const listEl = document.getElementById('ballsList');
+
+      if (balls.length === 0) {
+        listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No hay Rolla-Balls creadas aún.</div>';
+        return;
+      }
+
+      listEl.innerHTML = balls.map(ball => `
+        <div class="ball-item ${ball === activeBall ? 'active' : ''}" onclick="selectBall('${ball}')">
+          <div class="ball-name">
+            <span style="color: var(--rolla-green);">📦</span> ${ball}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function selectBall(ballName) {
+      activeBall = ballName;
+      document.getElementById('currentBallTitle').innerText = `📦 Rolla-Ball: ${ballName}`;
+      document.getElementById('ballActions').style.display = 'flex';
+      document.getElementById('uploadSection').style.display = 'block';
+      loadBalls();
+      loadObjects(ballName);
+    }
+
+    async function loadObjects(ballName) {
+      const container = document.getElementById('objectsContainer');
+      container.innerHTML = '<div style="color: var(--text-muted); padding: 2rem; text-align: center;">Cargando objetos de la Ball...</div>';
+
+      const res = await fetch(`/api/balls/${ballName}/objects`);
+      const objects = await res.json();
+
+      if (objects.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <h3>Esta Rolla-Ball está vacía</h3>
+            <p>Haz clic en el recuadro superior para subir tu primer objeto.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre del Objeto</th>
+                <th>Tamaño</th>
+                <th>Tipo MIME</th>
+                <th>Fecha de Creación</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${objects.map(obj => `
+                <tr>
+                  <td class="key-cell">${obj.key}</td>
+                  <td>${formatBytes(obj.size)} ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}</td>
+                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType}</span></td>
+                  <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <a href="/api/balls/${encodeURIComponent(ballName)}/download/${encodeURIComponent(obj.key)}" download="${obj.key}" class="btn btn-sm" style="text-decoration: none;">📥 Descargar</a>
+                    <button class="btn btn-danger btn-sm" onclick="openDeleteObjectModal('${obj.key}')">🗑️</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    // Modal Control
+    function openCreateBallModal() {
+      document.getElementById('newBallInput').value = '';
+      document.getElementById('createBallModal').classList.add('active');
+      setTimeout(() => document.getElementById('newBallInput').focus(), 100);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    async function submitCreateBall() {
+      const input = document.getElementById('newBallInput');
+      const name = input.value.trim();
+      if (!name) return;
+
+      closeModal('createBallModal');
+      try {
+        const res = await fetch('/api/balls', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          alert('Error al crear Rolla-Ball: ' + (errData.error || res.statusText));
+          return;
+        }
+      } catch (err) {
+        alert('Error al conectar con el servidor: ' + err.message);
+        return;
+      }
+      await loadBalls();
+      selectBall(name);
+    }
+
+    function openDeleteBallModal() {
+      if (!activeBall) return;
+      document.getElementById('confirmTitle').innerText = 'Eliminar Rolla-Ball';
+      document.getElementById('confirmMessage').innerText = `¿Seguro que deseas eliminar la Rolla-Ball '${activeBall}' y todos sus contenidos?`;
+      document.getElementById('confirmSubmitBtn').onclick = async () => {
+        closeModal('confirmModal');
+        await fetch(`/api/balls/${activeBall}`, { method: 'DELETE' });
+        activeBall = null;
+        document.getElementById('currentBallTitle').innerText = 'Selecciona una Rolla-Ball';
+        document.getElementById('ballActions').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('objectsContainer').innerHTML = `
+          <div class="empty-state">
+            <h3>Rolla-Ball eliminada</h3>
+            <p>Selecciona otra Rolla-Ball del panel lateral.</p>
+          </div>
+        `;
+        loadBalls();
+      };
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    function openDeleteObjectModal(key) {
+      document.getElementById('confirmTitle').innerText = 'Eliminar Objeto';
+      document.getElementById('confirmMessage').innerText = `¿Eliminar permanentemente el objeto '${key}'?`;
+      document.getElementById('confirmSubmitBtn').onclick = async () => {
+        closeModal('confirmModal');
+        await fetch(`/api/balls/${activeBall}/objects/${encodeURIComponent(key)}`, { method: 'DELETE' });
+        loadObjects(activeBall);
+      };
+      document.getElementById('confirmModal').classList.add('active');
+    }
+
+    async function uploadFiles(files) {
+      if (!files || files.length === 0 || !activeBall) return;
+      const fileList = Array.from(files);
+      const formData = new FormData();
+      
+      fileList.forEach(file => {
+        formData.append('files', file);
+      });
+
+      const zone = document.getElementById('dropZone');
+      const originalText = zone.innerHTML;
+      const fileCountStr = fileList.length === 1 ? fileList[0].name : `${fileList.length} archivos`;
+      zone.innerHTML = `<span style="font-size: 1.1rem; font-weight: 600; color: var(--rolla-green);">⏳ Subiendo y registrando ${fileCountStr}...</span>`;
+
+      try {
+        const res = await fetch(`/api/balls/${encodeURIComponent(activeBall)}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          alert('Error al subir los archivos: ' + (errData.error || res.statusText));
+        }
+      } catch (err) {
+        alert('Error al subir los archivos: ' + err.message);
+      }
+
+      zone.innerHTML = originalText;
+      loadObjects(activeBall);
+    }
+
+    // Drag and drop setup
+    document.addEventListener('DOMContentLoaded', () => {
+      const dropZone = document.getElementById('dropZone');
+      if (dropZone) {
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+          dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropZone.addEventListener(eventName, () => dropZone.classList.add('active'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropZone.addEventListener(eventName, () => dropZone.classList.remove('active'), false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          uploadFiles(files);
+        }, false);
+      }
+    });
+
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function checkAuth() {
+      const storedToken = localStorage.getItem('ROLLA_PAT');
+      if (!storedToken) {
+        // En entorno local con CLI no exige token si el servidor local ya tiene GITHUB_TOKEN en env
+        fetch('/api/balls')
+          .then(r => {
+            if (r.ok) {
+              loadBalls();
+            } else {
+              document.getElementById('authModal').classList.add('active');
+            }
+          })
+          .catch(() => {
+            document.getElementById('authModal').classList.add('active');
+          });
+      } else {
+        loadBalls();
+      }
+    }
+
+    function savePat() {
+      const input = document.getElementById('patInput');
+      const token = input.value.trim();
+      if (!token) return;
+      localStorage.setItem('ROLLA_PAT', token);
+      closeModal('authModal');
+      loadBalls();
+    }
+
+    checkAuth();
+  </script>
+</body>
+</html>
