@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rolla Storage Console — Terra Ecosystem</title>
-  <link rel="icon" type="image/png" href="/rola_icon_web.png">
-  <link rel="shortcut icon" type="image/png" href="/rola_icon_web.png">
+  <link rel="icon" type="image/png" href="rolla_logo.png">
+  <link rel="shortcut icon" type="image/png" href="rolla_logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -198,7 +198,7 @@
       justify-content: space-between;
       align-items: center;
       transition: all 0.2s ease;
-      background: rgba(22, 27, 34, 0.5);
+      background: rgba(255, 255, 255, 0.02);
     }
 
     .ball-item:hover {
@@ -209,22 +209,20 @@
     .ball-item.active {
       background: rgba(132, 204, 22, 0.12);
       border-color: var(--rolla-green);
-      box-shadow: 0 0 15px var(--rolla-green-glow);
     }
 
     .ball-name {
       font-weight: 600;
+      font-size: 0.95rem;
       display: flex;
       align-items: center;
       gap: 0.6rem;
-      font-size: 0.95rem;
     }
 
     /* Objects Table */
     .table-responsive {
+      width: 100%;
       overflow-x: auto;
-      border-radius: 10px;
-      border: 1px solid var(--border-color);
     }
 
     table {
@@ -235,60 +233,48 @@
     }
 
     th {
-      padding: 0.9rem 1.2rem;
-      background: rgba(13, 17, 23, 0.8);
-      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 1rem;
       color: var(--text-muted);
       font-weight: 600;
-      font-size: 0.78rem;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.8rem;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
 
     td {
-      padding: 1rem 1.2rem;
+      padding: 1rem;
       border-bottom: 1px solid var(--border-color);
-      vertical-align: middle;
     }
 
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: rgba(33, 38, 45, 0.5); }
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
 
     .key-cell {
       font-family: 'JetBrains Mono', monospace;
-      font-weight: 600;
+      font-weight: 500;
       color: #a3e635;
-      font-size: 0.9rem;
-    }
-
-    .meta-tag {
-      background: rgba(139, 92, 246, 0.2);
-      color: #c084fc;
-      border: 1px solid rgba(139, 92, 246, 0.4);
-      padding: 0.2rem 0.55rem;
-      border-radius: 6px;
-      font-size: 0.72rem;
-      font-weight: 600;
     }
 
     .upload-zone {
-      border: 2px dashed var(--border-accent);
-      border-radius: 12px;
-      padding: 2rem;
+      border: 2px dashed var(--border-color);
+      border-radius: 14px;
+      padding: 2.5rem 1.5rem;
       text-align: center;
-      margin-bottom: 1.75rem;
-      background: rgba(132, 204, 22, 0.03);
       cursor: pointer;
       transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.01);
+      margin-bottom: 2rem;
     }
 
-    .upload-zone:hover {
+    .upload-zone:hover, .upload-zone.active {
       border-color: var(--rolla-green);
-      background: rgba(132, 204, 22, 0.08);
-      box-shadow: 0 0 20px var(--rolla-green-glow);
+      background: rgba(132, 204, 22, 0.04);
+      box-shadow: 0 0 25px var(--rolla-green-glow);
     }
 
-    #fileInput { display: none; }
+    .upload-zone input { display: none; }
 
     .empty-state {
       text-align: center;
@@ -297,23 +283,24 @@
     }
 
     .empty-state h3 {
+      font-size: 1.2rem;
       color: var(--text-main);
       margin-bottom: 0.5rem;
     }
 
-    /* Modal Estilizado de la Marca */
+    /* Modal Overlay */
     .modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: var(--glass-overlay);
-      backdrop-filter: blur(8px);
-      z-index: 1000;
+      backdrop-filter: blur(10px);
       display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 1000;
       opacity: 0;
       pointer-events: none;
-      transition: all 0.25s ease;
+      transition: all 0.3s ease;
     }
 
     .modal-overlay.active {
@@ -322,15 +309,15 @@
     }
 
     .modal-box {
-      background: #161b22;
+      background: var(--bg-dark);
       border: 1px solid var(--border-accent);
       border-radius: 16px;
-      padding: 2rem;
       width: 100%;
       max-width: 440px;
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px var(--rolla-green-glow);
+      padding: 1.75rem;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
       transform: scale(0.95);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: transform 0.3s ease;
     }
 
     .modal-overlay.active .modal-box {
@@ -340,42 +327,34 @@
     .modal-header {
       display: flex;
       align-items: center;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
+      gap: 0.6rem;
+      margin-bottom: 1rem;
     }
 
     .modal-header h3 {
       font-size: 1.2rem;
       font-weight: 700;
-      color: var(--text-main);
     }
 
-    .modal-body {
-      margin-bottom: 1.5rem;
-    }
-
-    .modal-body p {
-      font-size: 0.9rem;
-      color: var(--text-muted);
-      margin-bottom: 1rem;
-    }
+    .modal-body { margin-bottom: 1.5rem; }
+    .modal-body p { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 1rem; }
 
     .input-field {
       width: 100%;
-      background: rgba(13, 17, 23, 0.9);
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
       padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: rgba(22, 27, 34, 0.8);
       color: var(--text-main);
       font-family: inherit;
       font-size: 0.95rem;
       outline: none;
-      transition: all 0.2s ease;
+      transition: border-color 0.2s ease;
     }
 
     .input-field:focus {
       border-color: var(--rolla-green);
-      box-shadow: 0 0 10px var(--rolla-green-glow);
+      box-shadow: 0 0 12px var(--rolla-green-glow);
     }
 
     .modal-actions {
@@ -383,21 +362,31 @@
       justify-content: flex-end;
       gap: 0.75rem;
     }
+
+    .meta-tag {
+      font-size: 0.75rem;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      margin-left: 0.4rem;
+    }
   </style>
 </head>
 <body>
 
   <header>
     <div class="brand">
-      <img src="/rolla_logo.png" alt="Rolla Logo" onerror="this.src='https://raw.githubusercontent.com/amglogicalis/rolla-repo-public/main/rolla_logo.png'" />
+      <img src="rolla_logo.png" alt="Rolla">
       <div>
-        <h1>Rolla Console</h1>
-        <div class="subtitle">Terra Ecosystem Object Storage</div>
+        <h1>Rolla Storage Engine</h1>
+        <div class="subtitle">Ecosistema Terra — Objeto Inmutable & Infinite Asset Engine</div>
       </div>
     </div>
     <div class="status-badges">
-      <span class="badge"><span class="badge-dot"></span> Infra: $0</span>
+      <span class="badge"><span class="badge-dot"></span> Motor Conectado</span>
       <span class="badge" style="background: rgba(59, 130, 246, 0.12); color: #60a5fa; border-color: rgba(59, 130, 246, 0.3);">Repo: .rolla-storage</span>
+      <button class="btn btn-secondary btn-sm" onclick="logout()">🚪 Cerrar Sesión</button>
     </div>
   </header>
 
@@ -426,7 +415,7 @@
         <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
           <span style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem;">📦</span>
           <span style="font-size: 1.05rem; font-weight: 600; color: var(--text-main);">Sube o arrastra uno o varios archivos a esta Rolla-Ball</span>
-          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Soporte ilimitado de tamaño (Chunking > 2GB automático)</span>
+          <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.3rem;">Servicio ilimitado de objetos subidos mediante Cloudflare CORS Proxy</span>
           <input type="file" id="fileInput" multiple onchange="uploadFiles(this.files)">
         </div>
       </div>
@@ -458,26 +447,11 @@
     </div>
   </div>
 
-  <!-- Modal para Confirmar Eliminación -->
-  <div class="modal-overlay" id="confirmModal">
-    <div class="modal-box">
-      <div class="modal-header">
-        <span style="font-size: 1.5rem;">⚠️</span>
-        <h3 id="confirmTitle">Confirmar Acción</h3>
-      </div>
-      <div class="modal-body">
-        <p id="confirmMessage">¿Estás seguro de continuar?</p>
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancelar</button>
-        <button class="btn btn-danger" id="confirmSubmitBtn">Confirmar</button>
-      </div>
-    </div>
   <!-- Modal de Bienvenida y Autenticación Móvil / Web -->
   <div class="modal-overlay" id="authModal">
     <div class="modal-box" style="max-width: 480px; text-align: center;">
       <div style="margin-bottom: 1rem;">
-        <img src="/rolla_logo.png" alt="Rolla" style="height: 56px; width: 56px; filter: drop-shadow(0 0 12px var(--rolla-green-glow));" onerror="this.src='https://raw.githubusercontent.com/amglogicalis/rolla-repo-public/main/rolla_logo.png'">
+        <img src="rolla_logo.png" alt="Rolla" style="height: 56px; width: 56px; filter: drop-shadow(0 0 12px var(--rolla-green-glow));">
       </div>
       <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Bienvenido a Rolla Storage</h3>
       <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1.5rem;">
@@ -505,75 +479,172 @@
   </div>
 
   <script>
+    let token = localStorage.getItem('ROLLA_PAT');
+    let owner = null;
+    const REPO = '.rolla-storage';
     let activeBall = null;
+    const WORKER_PROXY = 'https://rolla-cors-proxy.tree-baritone.workers.dev';
 
-    async function loadBalls() {
-      const res = await fetch('/api/balls');
-      const balls = await res.json();
-      const listEl = document.getElementById('ballsList');
+    const ballTag = name => name.startsWith('rolla-bkt-') ? name : `rolla-bkt-${name}`;
+    const ballName = tag => tag.replace('rolla-bkt-', '');
 
-      if (balls.length === 0) {
-        listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No hay Rolla-Balls creadas aún.</div>';
-        return;
+    const GH = (url, opts = {}) => {
+      const method = (opts.method || 'GET').toUpperCase();
+      let fetchUrl = url;
+      if (method === 'GET' || method === 'HEAD') {
+        const sep = url.includes('?') ? '&' : '?';
+        fetchUrl = `${url}${sep}_t=${Date.now()}`;
       }
+      return fetch(fetchUrl, {
+        ...opts,
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json',
+          ...(opts.headers || {})
+        }
+      });
+    };
 
-      listEl.innerHTML = balls.map(ball => `
-        <div class="ball-item ${ball === activeBall ? 'active' : ''}" onclick="selectBall('${ball}')">
-          <div class="ball-name">
-            <span style="color: var(--rolla-green);">📦</span> ${ball}
-          </div>
-        </div>
-      `).join('');
+    async function checkAuth() {
+      if (!token) { showAuthModal(); return; }
+      try {
+        const userRes = await GH('https://api.github.com/user');
+        if (!userRes.ok) {
+          localStorage.removeItem('ROLLA_PAT');
+          token = null;
+          showAuthModal();
+          return;
+        }
+        const user = await userRes.json();
+        owner = user.login;
+        await ensureStorageRepo();
+        closeModal('authModal');
+        loadBalls();
+      } catch (err) {
+        showAuthModal();
+      }
     }
 
-    async function selectBall(ballName) {
-      activeBall = ballName;
-      document.getElementById('currentBallTitle').innerText = `📦 Rolla-Ball: ${ballName}`;
+    function logout() {
+      if (confirm('¿Cerrar sesión y desvincular token de este navegador?')) {
+        localStorage.removeItem('ROLLA_PAT');
+        token = null; owner = null; activeBall = null;
+        document.getElementById('ballsList').innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Cargando Rolla-Balls...</div>';
+        document.getElementById('currentBallTitle').innerText = 'Selecciona una Rolla-Ball';
+        document.getElementById('ballActions').style.display = 'none';
+        document.getElementById('uploadSection').style.display = 'none';
+        document.getElementById('objectsContainer').innerHTML = '<div class="empty-state"><h3>No hay Rolla-Ball seleccionada</h3></div>';
+        showAuthModal();
+      }
+    }
+
+    function showAuthModal() {
+      if (token) {
+        const input = document.getElementById('patInput');
+        if (input) input.value = token;
+      }
+      document.getElementById('authModal').classList.add('active');
+    }
+
+    function savePat() {
+      const val = document.getElementById('patInput').value.trim();
+      if (!val) return;
+      localStorage.setItem('ROLLA_PAT', val);
+      token = val;
+      checkAuth();
+    }
+
+    async function ensureStorageRepo() {
+      try {
+        const repoRes = await GH(`https://api.github.com/repos/${owner}/${REPO}`);
+        if (repoRes.status === 404) {
+          await GH('https://api.github.com/user/repos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: REPO, private: true, auto_init: true, description: 'Rolla Storage Engine — Immutable Object Storage (Terra Ecosystem)' })
+          });
+        }
+      } catch (e) {}
+    }
+
+    async function loadBalls() {
+      const listEl = document.getElementById('ballsList');
+      try {
+        const res = await GH(`https://api.github.com/repos/${owner}/${REPO}/git/refs/tags`);
+        let refs = [];
+        if (res.ok) refs = await res.json();
+        else if (res.status === 404) refs = [];
+
+        const balls = Array.isArray(refs)
+          ? refs.map(ref => ref.ref.replace('refs/tags/', '')).filter(tag => tag.startsWith('rolla-bkt-')).map(tag => ballName(tag))
+          : [];
+
+        if (balls.length === 0) {
+          listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No hay Rolla-Balls creadas aún.<br><small>Usa "+ Crear Ball" para empezar.</small></div>';
+          return;
+        }
+
+        listEl.innerHTML = balls.map(b => `
+          <div class="ball-item ${b === activeBall ? 'active' : ''}" onclick="selectBall('${b}')">
+            <div class="ball-name"><span style="color: var(--rolla-green);">📦</span> ${b}</div>
+          </div>
+        `).join('');
+      } catch (err) {
+        listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">Error al cargar Rolla-Balls.</div>';
+      }
+    }
+
+    async function selectBall(cleanName) {
+      activeBall = cleanName;
+      document.getElementById('currentBallTitle').innerText = `📦 Rolla-Ball: ${cleanName}`;
       document.getElementById('ballActions').style.display = 'flex';
       document.getElementById('uploadSection').style.display = 'block';
       loadBalls();
-      loadObjects(ballName);
+      loadObjects(cleanName);
     }
 
-    async function loadObjects(ballName) {
+    async function loadObjects(cleanName) {
       const container = document.getElementById('objectsContainer');
-      container.innerHTML = '<div style="color: var(--text-muted); padding: 2rem; text-align: center;">Cargando objetos de la Ball...</div>';
+      container.innerHTML = '<div style="color: var(--text-muted); padding: 2rem; text-align: center;">Cargando objetos...</div>';
 
-      const res = await fetch(`/api/balls/${ballName}/objects`);
-      const objects = await res.json();
+      const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(cleanName)}`);
+      if (!relRes.ok) { container.innerHTML = '<div class="empty-state"><h3>Ball no encontrada</h3></div>'; return; }
+      const release = await relRes.json();
+      const assets = release.assets || [];
+
+      let objects = [];
+      const manifestAsset = assets.find(a => a.name === '_manifest.json');
+      if (manifestAsset) {
+        try {
+          const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${manifestAsset.id}`)}`;
+          const mRes = await fetch(proxyUrl, {
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/octet-stream' }
+          });
+          if (mRes.ok) {
+            const manifest = await mRes.json();
+            objects = Object.values(manifest.objects || {});
+          }
+        } catch (e) {}
+      }
 
       if (objects.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <h3>Esta Rolla-Ball está vacía</h3>
-            <p>Haz clic en el recuadro superior para subir tu primer objeto.</p>
-          </div>
-        `;
+        container.innerHTML = `<div class="empty-state"><h3>Esta Rolla-Ball está vacía</h3><p>Sube archivos usando el área de arriba.</p></div>`;
         return;
       }
 
       container.innerHTML = `
         <div class="table-responsive">
           <table>
-            <thead>
-              <tr>
-                <th>Nombre del Objeto</th>
-                <th>Tamaño</th>
-                <th>Tipo MIME</th>
-                <th>Fecha de Creación</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Nombre del Objeto</th><th>Tamaño</th><th>Tipo MIME</th><th>Acciones</th></tr></thead>
             <tbody>
               ${objects.map(obj => `
                 <tr>
                   <td class="key-cell">${obj.key}</td>
                   <td>${formatBytes(obj.size)} ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}</td>
-                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType}</span></td>
-                  <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt).toLocaleDateString()}</td>
+                  <td><span style="font-size:0.8rem; color:var(--text-muted);">${obj.contentType}</span></td>
                   <td>
-                    <a href="/api/balls/${encodeURIComponent(ballName)}/download/${encodeURIComponent(obj.key)}" download="${obj.key}" class="btn btn-sm" style="text-decoration: none;">📥 Descargar</a>
-                    <button class="btn btn-danger btn-sm" onclick="openDeleteObjectModal('${obj.key}')">🗑️</button>
+                    <button class="btn btn-sm" onclick="downloadObject('${obj.key}')">📥 Descargar</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteObject('${obj.key}')">🗑️</button>
                   </td>
                 </tr>
               `).join('')}
@@ -583,7 +654,6 @@
       `;
     }
 
-    // Modal Control
     function openCreateBallModal() {
       document.getElementById('newBallInput').value = '';
       document.getElementById('createBallModal').classList.add('active');
@@ -595,158 +665,190 @@
     }
 
     async function submitCreateBall() {
-      const input = document.getElementById('newBallInput');
-      const name = input.value.trim();
+      const name = document.getElementById('newBallInput').value.trim();
       if (!name) return;
-
       closeModal('createBallModal');
+
       try {
-        const res = await fetch('/api/balls', {
+        const res = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
+          body: JSON.stringify({ tag_name: ballTag(name), name: name, body: `Rolla Bucket: ${name}`, draft: false, prerelease: false })
         });
         if (!res.ok) {
           const errData = await res.json();
-          alert('Error al crear Rolla-Ball: ' + (errData.error || res.statusText));
+          alert('Error al crear Rolla-Ball: ' + (errData.message || res.statusText));
           return;
         }
+
+        // Upload initial _manifest.json to release via Cloudflare Worker Proxy
+        const release = await res.json();
+        const uploadUrl = release.upload_url.replace('{?name,label}', '?name=_manifest.json');
+        const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(uploadUrl)}`;
+        const initialManifestStr = JSON.stringify({ bucket: name, createdAt: new Date().toISOString(), objects: {} }, null, 2);
+
+        await fetch(proxyUrl, {
+          method: 'POST',
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+          body: initialManifestStr
+        });
       } catch (err) {
-        alert('Error al conectar con el servidor: ' + err.message);
+        alert('Error al crear Rolla-Ball: ' + err.message);
         return;
       }
+
       await loadBalls();
       selectBall(name);
     }
 
-    function openDeleteBallModal() {
-      if (!activeBall) return;
-      document.getElementById('confirmTitle').innerText = 'Eliminar Rolla-Ball';
-      document.getElementById('confirmMessage').innerText = `¿Seguro que deseas eliminar la Rolla-Ball '${activeBall}' y todos sus contenidos?`;
-      document.getElementById('confirmSubmitBtn').onclick = async () => {
-        closeModal('confirmModal');
-        await fetch(`/api/balls/${activeBall}`, { method: 'DELETE' });
-        activeBall = null;
-        document.getElementById('currentBallTitle').innerText = 'Selecciona una Rolla-Ball';
-        document.getElementById('ballActions').style.display = 'none';
-        document.getElementById('uploadSection').style.display = 'none';
-        document.getElementById('objectsContainer').innerHTML = `
-          <div class="empty-state">
-            <h3>Rolla-Ball eliminada</h3>
-            <p>Selecciona otra Rolla-Ball del panel lateral.</p>
-          </div>
-        `;
-        loadBalls();
-      };
-      document.getElementById('confirmModal').classList.add('active');
-    }
-
-    function openDeleteObjectModal(key) {
-      document.getElementById('confirmTitle').innerText = 'Eliminar Objeto';
-      document.getElementById('confirmMessage').innerText = `¿Eliminar permanentemente el objeto '${key}'?`;
-      document.getElementById('confirmSubmitBtn').onclick = async () => {
-        closeModal('confirmModal');
-        await fetch(`/api/balls/${activeBall}/objects/${encodeURIComponent(key)}`, { method: 'DELETE' });
-        loadObjects(activeBall);
-      };
-      document.getElementById('confirmModal').classList.add('active');
-    }
-
     async function uploadFiles(files) {
       if (!files || files.length === 0 || !activeBall) return;
-      const fileList = Array.from(files);
-      const formData = new FormData();
-      
-      fileList.forEach(file => {
-        formData.append('files', file);
-      });
-
       const zone = document.getElementById('dropZone');
-      const originalText = zone.innerHTML;
-      const fileCountStr = fileList.length === 1 ? fileList[0].name : `${fileList.length} archivos`;
-      zone.innerHTML = `<span style="font-size: 1.1rem; font-weight: 600; color: var(--rolla-green);">⏳ Subiendo y registrando ${fileCountStr}...</span>`;
+      const originalHTML = zone.innerHTML;
+      zone.innerHTML = `<span style="font-size:1.1rem; font-weight:600; color:var(--rolla-green);">⏳ Subiendo ${files.length} archivo(s) a '${activeBall}' via CDN Proxy...</span>`;
 
       try {
-        const res = await fetch(`/api/balls/${encodeURIComponent(activeBall)}/upload`, {
-          method: 'POST',
-          body: formData
-        });
-        if (!res.ok) {
-          const errData = await res.json();
-          alert('Error al subir los archivos: ' + (errData.error || res.statusText));
+        const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
+        let release = await relRes.json();
+        let assets = release.assets || [];
+
+        // 1. Download current manifest via Worker Proxy
+        let manifest = { bucket: activeBall, objects: {} };
+        const manifestAsset = assets.find(a => a.name === '_manifest.json');
+        if (manifestAsset) {
+          try {
+            const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${manifestAsset.id}`)}`;
+            const mRes = await fetch(proxyUrl, {
+              headers: { 'Authorization': `token ${token}`, 'Accept': 'application/octet-stream' }
+            });
+            if (mRes.ok) manifest = await mRes.json();
+          } catch (e) {}
         }
+        if (!manifest.objects) manifest.objects = {};
+
+        // 2. Upload files to Release Assets via Worker Proxy (100% CORS Clean)
+        for (const file of files) {
+          // If file asset already exists, delete old asset first
+          const existingAsset = assets.find(a => a.name === file.name);
+          if (existingAsset) {
+            await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${existingAsset.id}`, { method: 'DELETE' });
+          }
+
+          const rawUploadUrl = release.upload_url.replace('{?name,label}', `?name=${encodeURIComponent(file.name)}`);
+          const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(rawUploadUrl)}`;
+
+          const upRes = await fetch(proxyUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `token ${token}`,
+              'Content-Type': file.type || 'application/octet-stream'
+            },
+            body: file
+          });
+
+          if (!upRes.ok) {
+            const errData = await upRes.json();
+            throw new Error(errData.message || upRes.statusText);
+          }
+
+          const upData = await upRes.json();
+          manifest.objects[file.name] = {
+            key: file.name,
+            size: file.size,
+            contentType: file.type || 'application/octet-stream',
+            createdAt: new Date().toISOString(),
+            chunked: false,
+            downloadUrl: upData.browser_download_url
+          };
+        }
+
+        // 3. Delete old _manifest.json asset if exists
+        const oldManifestAsset = assets.find(a => a.name === '_manifest.json');
+        if (oldManifestAsset) {
+          await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${oldManifestAsset.id}`, { method: 'DELETE' });
+        }
+
+        // 4. Upload updated _manifest.json via Worker Proxy
+        const rawManifestUploadUrl = release.upload_url.replace('{?name,label}', '?name=_manifest.json');
+        const manifestProxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(rawManifestUploadUrl)}`;
+        await fetch(manifestProxyUrl, {
+          method: 'POST',
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(manifest, null, 2)
+        });
       } catch (err) {
-        alert('Error al subir los archivos: ' + err.message);
+        alert('Error al subir: ' + err.message);
       }
 
-      zone.innerHTML = originalText;
+      zone.innerHTML = originalHTML;
       loadObjects(activeBall);
     }
 
-    // Drag and drop setup
+    async function downloadObject(key) {
+      const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
+      const release = await relRes.json();
+      const asset = (release.assets || []).find(a => a.name === key);
+      if (!asset) { alert('Objeto no encontrado'); return; }
+
+      try {
+        const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${asset.id}`)}`;
+        const res = await fetch(proxyUrl, {
+          headers: { 'Authorization': `token ${token}`, 'Accept': 'application/octet-stream' }
+        });
+        if (!res.ok) throw new Error('Error al obtener objeto');
+        const blob = await res.blob();
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = key;
+        a.click();
+      } catch (err) {
+        alert('Error al descargar: ' + err.message);
+      }
+    }
+
+    async function deleteObject(key) {
+      if (!confirm(`¿Eliminar permanentemente '${key}'?`)) return;
+      const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
+      const release = await relRes.json();
+      const asset = (release.assets || []).find(a => a.name === key);
+      if (asset) {
+        await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${asset.id}`, { method: 'DELETE' });
+      }
+      loadObjects(activeBall);
+    }
+
+    async function openDeleteBallModal() {
+      if (!activeBall || !confirm(`¿Eliminar completamente la Rolla-Ball '${activeBall}'? Esta acción no se puede deshacer.`)) return;
+
+      const relRes = await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/tags/${ballTag(activeBall)}`);
+      if (relRes.ok) {
+        const release = await relRes.json();
+        await GH(`https://api.github.com/repos/${owner}/${REPO}/releases/${release.id}`, { method: 'DELETE' });
+      }
+      await GH(`https://api.github.com/repos/${owner}/${REPO}/git/refs/tags/${ballTag(activeBall)}`, { method: 'DELETE' });
+
+      activeBall = null;
+      document.getElementById('currentBallTitle').innerText = 'Selecciona una Rolla-Ball';
+      document.getElementById('ballActions').style.display = 'none';
+      document.getElementById('uploadSection').style.display = 'none';
+      document.getElementById('objectsContainer').innerHTML = `<div class="empty-state"><h3>Rolla-Ball eliminada</h3></div>`;
+      loadBalls();
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const dropZone = document.getElementById('dropZone');
-      if (dropZone) {
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-          dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-          dropZone.addEventListener(eventName, () => dropZone.classList.add('active'), false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-          dropZone.addEventListener(eventName, () => dropZone.classList.remove('active'), false);
-        });
-
-        dropZone.addEventListener('drop', (e) => {
-          const dt = e.dataTransfer;
-          const files = dt.files;
-          uploadFiles(files);
-        }, false);
-      }
+      if (!dropZone) return;
+      ['dragenter','dragover','dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation(); }));
+      ['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.add('active')));
+      ['dragleave','drop'].forEach(e => dropZone.addEventListener(e, () => dropZone.classList.remove('active')));
+      dropZone.addEventListener('drop', e => uploadFiles(e.dataTransfer.files));
     });
 
     function formatBytes(bytes) {
-      if (bytes === 0) return '0 Bytes';
-      const k = 1024;
-      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      if (!bytes) return '0 Bytes';
+      const k = 1024, sizes = ['Bytes','KB','MB','GB','TB'];
       const i = Math.floor(Math.log(bytes) / Math.log(k));
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    function checkAuth() {
-      const storedToken = localStorage.getItem('ROLLA_PAT');
-      if (!storedToken) {
-        // En entorno local con CLI no exige token si el servidor local ya tiene GITHUB_TOKEN en env
-        fetch('/api/balls')
-          .then(r => {
-            if (r.ok) {
-              loadBalls();
-            } else {
-              document.getElementById('authModal').classList.add('active');
-            }
-          })
-          .catch(() => {
-            document.getElementById('authModal').classList.add('active');
-          });
-      } else {
-        loadBalls();
-      }
-    }
-
-    function savePat() {
-      const input = document.getElementById('patInput');
-      const token = input.value.trim();
-      if (!token) return;
-      localStorage.setItem('ROLLA_PAT', token);
-      closeModal('authModal');
-      loadBalls();
     }
 
     checkAuth();
