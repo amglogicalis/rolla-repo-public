@@ -616,7 +616,7 @@
       const manifestAsset = assets.find(a => a.name === '_manifest.json');
       if (manifestAsset) {
         try {
-          const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${manifestAsset.id}`)}`;
+          const proxyUrl = `${WORKER_PROXY}?target=${encodeURIComponent(`https://api.github.com/repos/${owner}/${REPO}/releases/assets/${manifestAsset.id}`)}&_t=${Date.now()}`;
           const mRes = await fetch(proxyUrl, {
             headers: { 'Authorization': `token ${token}`, 'Accept': 'application/octet-stream' }
           });
