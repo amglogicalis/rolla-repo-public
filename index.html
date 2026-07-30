@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rolla Storage Console — Terra Ecosystem</title>
-  <link rel="icon" type="image/png" href="/rola_icon_web.png">
-  <link rel="shortcut icon" type="image/png" href="/rola_icon_web.png">
+  <link rel="icon" type="image/png" href="./rola_icon_web.png">
+  <link rel="shortcut icon" type="image/png" href="./rola_icon_web.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -883,36 +883,17 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    function checkAuth() {
-      const storedToken = localStorage.getItem('ROLLA_PAT');
-      if (!storedToken) {
-        // En entorno local con CLI no exige token si el servidor local ya tiene GITHUB_TOKEN en env
-        fetch('/api/balls')
-          .then(r => {
-            if (r.ok) {
-              loadBalls();
-            } else {
-              document.getElementById('authModal').classList.add('active');
-            }
-          })
-          .catch(() => {
-            document.getElementById('authModal').classList.add('active');
-          });
+    window.addEventListener('DOMContentLoaded', () => {
+      if (isGitHubPages()) {
+        if (!ghToken) {
+          document.getElementById('authModal').classList.add('active');
+        } else {
+          loadBalls();
+        }
       } else {
         loadBalls();
       }
-    }
-
-    function savePat() {
-      const input = document.getElementById('patInput');
-      const token = input.value.trim();
-      if (!token) return;
-      localStorage.setItem('ROLLA_PAT', token);
-      closeModal('authModal');
-      loadBalls();
-    }
-
-    checkAuth();
+    });
   </script>
 </body>
 </html>
