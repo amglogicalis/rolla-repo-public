@@ -66,6 +66,7 @@ La herramienta CLI de **Rolla** permite gestionar tus objetos y lanzar consolas 
 | `rolla console --port <puerto>` | Especifica un **puerto personalizado** para la consola web en caso de conflicto. | `rolla console --port 8080` |
 | `rolla ls` | **Lista todas las Rolla-Balls (buckets)** existentes en tu cuenta. | `rolla ls` |
 | `rolla create <ball-name>` | **Crea una nueva Rolla-Ball** en la nube. | `rolla create fotos-2026` |
+| `rolla rename <old-name> <new-name>` | **Renombra una Rolla-Ball** existente. | `rolla rename fotos-2026 galeria-2026` |
 | `rolla rm <ball-name>` | **Elimina una Rolla-Ball** y todos los objetos contenidos. | `rolla rm fotos-2026` |
 | `rolla ls <ball-name>` | **Lista los objetos y archivos** dentro de una Rolla-Ball específica. | `rolla ls fotos-2026` |
 | `rolla upload <ball-name> <file-path>` | **Subir un archivo** a la Rolla-Ball especificada. | `rolla upload fotos-2026 ./imagen.png` |

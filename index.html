@@ -265,10 +265,15 @@
       background: rgba(139, 92, 246, 0.2);
       color: #c084fc;
       border: 1px solid rgba(139, 92, 246, 0.4);
-      padding: 0.2rem 0.55rem;
+      padding: 0.15rem 0.5rem;
       border-radius: 6px;
       font-size: 0.72rem;
       font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+      white-space: nowrap;
     }
 
     .upload-zone {
@@ -418,6 +423,7 @@
       <div class="card-title">
         <span id="currentBallTitle">Selecciona una Rolla-Ball</span>
         <div id="ballActions" style="display: none; gap: 0.5rem;">
+          <button class="btn btn-secondary btn-sm" onclick="openRenameBallModal()">✏️ Renombrar Ball</button>
           <button class="btn btn-danger btn-sm" onclick="openDeleteBallModal()">Eliminar Ball</button>
         </div>
       </div>
@@ -431,10 +437,10 @@
         </div>
       </div>
 
-      <div id="objectsContainer">
+      <div id="objectsContainer" style="margin-top: 1.5rem;">
         <div class="empty-state">
-          <h3>No hay Rolla-Ball seleccionada</h3>
-          <p>Selecciona una Rolla-Ball del menú lateral para gestionar sus objetos.</p>
+          <h3>Selecciona una Rolla-Ball a la izquierda</h3>
+          <p>Podrás inspeccionar, descargar y gestionar las versiones de tus objetos.</p>
         </div>
       </div>
     </section>
@@ -454,6 +460,23 @@
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeModal('createBallModal')">Cancelar</button>
         <button class="btn" onclick="submitCreateBall()">Crear Ball</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Renombrar Rolla-Ball -->
+  <div class="modal-overlay" id="renameBallModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Renombrar Rolla-Ball</h3>
+      </div>
+      <div class="modal-body">
+        <p>Introduce el nuevo nombre para la Rolla-Ball <strong id="renameBallOldName" style="color: var(--rolla-green);"></strong>:</p>
+        <input type="text" id="renameBallInput" class="input-field" placeholder="ej. nuevo-nombre" onkeyup="if(event.key==='Enter') submitRenameBall()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal('renameBallModal')">Cancelar</button>
+        <button class="btn" id="btnSubmitRenameBall" onclick="submitRenameBall()">Guardar Nombre</button>
       </div>
     </div>
   </div>
@@ -506,24 +529,84 @@
 
   <script>
     let activeBall = null;
+    let ghToken = localStorage.getItem('rolla_pat') || '';
+    let ghOwner = localStorage.getItem('rolla_owner') || '';
+
+    function isGitHubPages() {
+      return window.location.hostname.includes('github.io') || (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'));
+    }
+
+    async function checkAuth() {
+      if (isGitHubPages() && !ghToken) {
+        document.getElementById('authModal').classList.add('active');
+      }
+    }
+
+    function savePat() {
+      const val = document.getElementById('patInput').value.trim();
+      if (!val) return;
+      ghToken = val;
+      localStorage.setItem('rolla_pat', val);
+      document.getElementById('authModal').classList.remove('active');
+      loadBalls();
+    }
+
+    async function getOwner() {
+      if (ghOwner) return ghOwner;
+      if (!ghToken) return '';
+      const res = await fetch('https://api.github.com/user', {
+        headers: { 'Authorization': `token ${ghToken}` }
+      });
+      if (res.ok) {
+        const user = await res.json();
+        ghOwner = user.login;
+        localStorage.setItem('rolla_owner', ghOwner);
+        return ghOwner;
+      }
+      return '';
+    }
 
     async function loadBalls() {
-      const res = await fetch('/api/balls');
-      const balls = await res.json();
       const listEl = document.getElementById('ballsList');
+      try {
+        let balls = [];
 
-      if (balls.length === 0) {
-        listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No hay Rolla-Balls creadas aún.</div>';
-        return;
-      }
+        if (isGitHubPages()) {
+          if (!ghToken) {
+            checkAuth();
+            return;
+          }
+          const owner = await getOwner();
+          const res = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases?per_page=100&_t=${Date.now()}`, {
+            headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (!res.ok) throw new Error('Error al conectar con la API de GitHub.');
+          const releases = await res.json();
+          balls = releases
+            .filter(r => r.tag_name && r.tag_name.startsWith('rolla-bkt-'))
+            .map(r => r.name || r.tag_name.replace('rolla-bkt-', ''));
+        } else {
+          const res = await fetch(`/api/balls?_t=${Date.now()}`);
+          if (!res.ok) throw new Error('Offline / Server Error');
+          balls = await res.json();
+        }
 
-      listEl.innerHTML = balls.map(ball => `
-        <div class="ball-item ${ball === activeBall ? 'active' : ''}" onclick="selectBall('${ball}')">
-          <div class="ball-name">
-            <span style="color: var(--rolla-green);">📦</span> ${ball}
+        if (!balls || balls.length === 0) {
+          listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem;">No hay Rolla-Balls creadas aún.</div>';
+          return;
+        }
+
+        listEl.innerHTML = balls.map(ball => `
+          <div class="ball-item ${ball === activeBall ? 'active' : ''}" onclick="selectBall('${ball}')">
+            <div class="ball-name">
+              <span style="color: var(--rolla-green);">📦</span> ${ball}
+            </div>
           </div>
-        </div>
-      `).join('');
+        `).join('');
+
+      } catch (err) {
+        listEl.innerHTML = `<div style="color: #f87171; font-size: 0.82rem; padding: 0.5rem 0;">⚠️ Error al cargar: ${err.message}</div>`;
+      }
     }
 
     async function selectBall(ballName) {
@@ -539,8 +622,28 @@
       const container = document.getElementById('objectsContainer');
       container.innerHTML = '<div style="color: var(--text-muted); padding: 2rem; text-align: center;">Cargando objetos de la Ball...</div>';
 
-      const res = await fetch(`/api/balls/${ballName}/objects`);
-      const objects = await res.json();
+      try {
+        let objects = [];
+
+        if (isGitHubPages()) {
+          const owner = await getOwner();
+          const tag = `rolla-bkt-${ballName.toLowerCase().trim()}`;
+          const res = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/tags/${tag}?_t=${Date.now()}`, {
+            headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (res.ok) {
+            const release = await res.json();
+            const manifestAsset = release.assets?.find(a => a.name === 'manifest.json');
+            if (manifestAsset) {
+              const manifestRes = await fetch(manifestAsset.browser_download_url);
+              const manifest = await manifestRes.json();
+              objects = Object.values(manifest.objects || {});
+            }
+          }
+        } else {
+          const res = await fetch(`/api/balls/${ballName}/objects?_t=${Date.now()}`);
+          if (res.ok) objects = await res.json();
+        }
 
       if (objects.length === 0) {
         container.innerHTML = `
@@ -585,6 +688,9 @@
           </table>
         </div>
       `;
+      } catch (err) {
+        container.innerHTML = `<div style="color: #f87171; padding: 2rem; text-align: center;">⚠️ Error al cargar objetos: ${err.message}</div>`;
+      }
     }
 
     // Modal Control
@@ -596,6 +702,52 @@
 
     function closeModal(id) {
       document.getElementById(id).classList.remove('active');
+    }
+
+    function openRenameBallModal() {
+      if (!activeBall) return;
+      document.getElementById('renameBallOldName').innerText = activeBall;
+      document.getElementById('renameBallInput').value = activeBall;
+      document.getElementById('renameBallModal').classList.add('active');
+      setTimeout(() => document.getElementById('renameBallInput').focus(), 100);
+    }
+
+    async function submitRenameBall() {
+      const input = document.getElementById('renameBallInput');
+      const newName = input.value.trim();
+      if (!newName || newName === activeBall) {
+        closeModal('renameBallModal');
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnSubmitRenameBall');
+      try {
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = 'Guardando...';
+
+        const res = await fetch(`/api/balls/${encodeURIComponent(activeBall)}/rename`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newName })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          alert('Error al renombrar Rolla-Ball: ' + (errData.error || res.statusText));
+          return;
+        }
+
+        closeModal('renameBallModal');
+        const oldName = activeBall;
+        await loadBalls();
+        selectBall(newName);
+
+      } catch (err) {
+        alert('Error al conectar con el servidor: ' + err.message);
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = 'Guardar Nombre';
+      }
     }
 
     async function submitCreateBall() {
