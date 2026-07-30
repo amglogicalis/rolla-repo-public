@@ -600,9 +600,10 @@
 
           const releases = await res.json();
           if (Array.isArray(releases)) {
-            balls = releases
+            const rawBalls = releases
               .filter(r => r.tag_name && r.tag_name.startsWith('rolla-bkt-'))
-              .map(r => r.name || r.tag_name.replace('rolla-bkt-', ''));
+              .map(r => (r.name && r.name !== r.tag_name ? r.name : r.tag_name.replace('rolla-bkt-', '')));
+            balls = Array.from(new Set(rawBalls));
           }
         } else {
           const res = await fetch(`/api/balls?_t=${Date.now()}`);
@@ -714,7 +715,7 @@
               <thead>
                 <tr>
                   <th>Nombre del Objeto</th>
-                  <th>Tamaño</th>
+                  <th style="min-width: 170px;">Tamaño</th>
                   <th>Tipo MIME</th>
                   <th>Fecha de Creación</th>
                   <th>Acciones</th>
@@ -724,10 +725,10 @@
                 ${objects.filter(obj => obj.key !== 'manifest.json' && obj.key !== '_manifest.json').map(obj => `
                   <tr>
                     <td class="key-cell">${obj.key}</td>
-                    <td style="white-space: nowrap;">
+                    <td style="white-space: nowrap; min-width: 170px;">
                       ${formatBytes(obj.size)}
                       ${obj.chunked ? ' <span class="meta-tag">Chunked >2GB</span>' : ''}
-                      ${obj.versions && obj.versions.length > 1 ? ` <span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4);">${obj.versions.length} Versiones</span>` : ''}
+                      ${obj.versions && obj.versions.length > 1 ? ` <span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4); font-size: 0.72rem; padding: 0.2rem 0.5rem; display: inline-block; vertical-align: middle;">${obj.versions.length} Versiones</span>` : ''}
                     </td>
                     <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType || 'binary'}</span></td>
                     <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt || Date.now()).toLocaleDateString()}</td>
