@@ -265,15 +265,15 @@
       background: rgba(139, 92, 246, 0.2);
       color: #c084fc;
       border: 1px solid rgba(139, 92, 246, 0.4);
-      padding: 0.15rem 0.5rem;
+      padding: 0.2rem 0.6rem;
       border-radius: 6px;
       font-size: 0.72rem;
       font-weight: 600;
       display: inline-flex;
       align-items: center;
-      margin-left: 0.4rem;
-      vertical-align: middle;
+      line-height: 1;
       white-space: nowrap;
+      height: fit-content;
     }
 
     .upload-zone {
@@ -722,13 +722,15 @@
                 </tr>
               </thead>
               <tbody>
-                ${objects.map(obj => `
+                ${objects.filter(obj => obj.key !== 'manifest.json' && obj.key !== '_manifest.json').map(obj => `
                   <tr>
                     <td class="key-cell">${obj.key}</td>
                     <td>
-                      ${formatBytes(obj.size)} 
-                      ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}
-                      ${obj.versions && obj.versions.length > 1 ? `<span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4);">${obj.versions.length} Versiones</span>` : ''}
+                      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap;">
+                        <span>${formatBytes(obj.size)}</span>
+                        ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}
+                        ${obj.versions && obj.versions.length > 1 ? `<span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4); margin-left: 0;">${obj.versions.length} Versiones</span>` : ''}
+                      </div>
                     </td>
                     <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType || 'binary'}</span></td>
                     <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt || Date.now()).toLocaleDateString()}</td>
