@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rolla Storage Console — Terra Ecosystem</title>
-  <link rel="icon" type="image/png" href="./rola_icon_web.png">
-  <link rel="shortcut icon" type="image/png" href="./rola_icon_web.png">
+  <link rel="icon" type="image/png" href="./rolla_logo.png">
+  <link rel="shortcut icon" type="image/png" href="./rolla_logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -573,18 +573,35 @@
 
         if (isGitHubPages()) {
           if (!ghToken) {
-            checkAuth();
+            document.getElementById('authModal').classList.add('active');
+            listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">Pega tu token PAT de GitHub para conectar.</div>';
             return;
           }
           const owner = await getOwner();
+          if (!owner) {
+            document.getElementById('authModal').classList.add('active');
+            listEl.innerHTML = '<div style="color: #f87171; font-size: 0.85rem; padding: 0.5rem 0;">Token PAT inválido o expirable.</div>';
+            return;
+          }
+
           const res = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases?per_page=100&_t=${Date.now()}`, {
             headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
           });
-          if (!res.ok) throw new Error('Error al conectar con la API de GitHub.');
+
+          if (res.status === 404) {
+            // Repositorio .rolla-storage aún no creado
+            listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">No hay Rolla-Balls creadas aún. Haz clic en "+ Crear Ball".</div>';
+            return;
+          }
+
+          if (!res.ok) throw new Error(`API de GitHub devuelta ${res.status}`);
+
           const releases = await res.json();
-          balls = releases
-            .filter(r => r.tag_name && r.tag_name.startsWith('rolla-bkt-'))
-            .map(r => r.name || r.tag_name.replace('rolla-bkt-', ''));
+          if (Array.isArray(releases)) {
+            balls = releases
+              .filter(r => r.tag_name && r.tag_name.startsWith('rolla-bkt-'))
+              .map(r => r.name || r.tag_name.replace('rolla-bkt-', ''));
+          }
         } else {
           const res = await fetch(`/api/balls?_t=${Date.now()}`);
           if (!res.ok) throw new Error('Offline / Server Error');
