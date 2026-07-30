@@ -265,15 +265,14 @@
       background: rgba(139, 92, 246, 0.2);
       color: #c084fc;
       border: 1px solid rgba(139, 92, 246, 0.4);
-      padding: 0.2rem 0.6rem;
+      padding: 0.15rem 0.5rem;
       border-radius: 6px;
       font-size: 0.72rem;
       font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      line-height: 1;
+      display: inline-block;
+      margin-left: 0.4rem;
+      vertical-align: middle;
       white-space: nowrap;
-      height: fit-content;
     }
 
     .upload-zone {
@@ -725,12 +724,10 @@
                 ${objects.filter(obj => obj.key !== 'manifest.json' && obj.key !== '_manifest.json').map(obj => `
                   <tr>
                     <td class="key-cell">${obj.key}</td>
-                    <td>
-                      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: nowrap;">
-                        <span>${formatBytes(obj.size)}</span>
-                        ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}
-                        ${obj.versions && obj.versions.length > 1 ? `<span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4); margin-left: 0;">${obj.versions.length} Versiones</span>` : ''}
-                      </div>
+                    <td style="white-space: nowrap;">
+                      ${formatBytes(obj.size)}
+                      ${obj.chunked ? ' <span class="meta-tag">Chunked >2GB</span>' : ''}
+                      ${obj.versions && obj.versions.length > 1 ? ` <span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4);">${obj.versions.length} Versiones</span>` : ''}
                     </td>
                     <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType || 'binary'}</span></td>
                     <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt || Date.now()).toLocaleDateString()}</td>
@@ -826,11 +823,22 @@
           if (!relRes.ok) throw new Error('No se encontró la Rolla-Ball original.');
 
           const release = await relRes.json();
+          // Actualizar release
           await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/${release.id}`, {
             method: 'PATCH',
             headers: { 'Authorization': `token ${ghToken}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ tag_name: newTag, name: newName })
           });
+
+          // Eliminar el tag Git antiguo de refs para evitar duplicados
+          try {
+            await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/git/refs/tags/${oldTag}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `token ${ghToken}` }
+            });
+          } catch (e) {
+            // Ignorar si ya fue eliminado por GitHub
+          }
 
         } else {
           const res = await fetch(`/api/balls/${encodeURIComponent(activeBall)}/rename`, {
