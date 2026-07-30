@@ -900,17 +900,25 @@
       return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
+    function initRollaConsole() {
       if (isGitHubPages()) {
         if (!ghToken) {
           document.getElementById('authModal').classList.add('active');
+          const listEl = document.getElementById('ballsList');
+          if (listEl) listEl.innerHTML = '<div style="color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">Pega tu token PAT de GitHub para conectar.</div>';
         } else {
           loadBalls();
         }
       } else {
         loadBalls();
       }
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initRollaConsole);
+    } else {
+      initRollaConsole();
+    }
   </script>
 </body>
 </html>
