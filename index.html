@@ -635,7 +635,6 @@
       document.getElementById('ballActions').style.display = 'flex';
       document.getElementById('uploadSection').style.display = 'block';
 
-      // Update active selection UI without recursive loadBalls()
       const items = document.querySelectorAll('.ball-item');
       items.forEach(el => {
         if (el.innerText.includes(ballName)) el.classList.add('active');
@@ -662,9 +661,13 @@
             const release = await res.json();
             const manifestAsset = release.assets?.find(a => a.name === 'manifest.json');
             if (manifestAsset) {
-              const manifestRes = await fetch(manifestAsset.browser_download_url);
-              const manifest = await manifestRes.json();
-              objects = Object.values(manifest.objects || {});
+              const manifestRes = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/assets/${manifestAsset.id}`, {
+                headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/octet-stream' }
+              });
+              if (manifestRes.ok) {
+                const manifest = await manifestRes.json();
+                objects = Object.values(manifest.objects || {});
+              }
             }
           }
         } else {
@@ -672,55 +675,54 @@
           if (res.ok) objects = await res.json();
         }
 
-      if (objects.length === 0) {
+        if (!objects || objects.length === 0) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <h3>Esta Rolla-Ball está vacía</h3>
+              <p>Haz clic en el recuadro superior para subir tu primer objeto.</p>
+            </div>
+          `;
+          return;
+        }
+
         container.innerHTML = `
-          <div class="empty-state">
-            <h3>Esta Rolla-Ball está vacía</h3>
-            <p>Haz clic en el recuadro superior para subir tu primer objeto.</p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Nombre del Objeto</th>
+                  <th>Tamaño</th>
+                  <th>Tipo MIME</th>
+                  <th>Fecha de Creación</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${objects.map(obj => `
+                  <tr>
+                    <td class="key-cell">${obj.key}</td>
+                    <td>
+                      ${formatBytes(obj.size)} 
+                      ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}
+                      ${obj.versions && obj.versions.length > 1 ? `<span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4);">${obj.versions.length} Versiones</span>` : ''}
+                    </td>
+                    <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType}</span></td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      <a href="${obj.downloadUrl}" target="_blank" download="${obj.key}" class="btn btn-sm" style="text-decoration: none;">📥 Descargar</a>
+                      <button class="btn btn-danger btn-sm" onclick="deleteObjectWeb('${ballName}', '${obj.key}')">🗑️</button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
           </div>
         `;
-        return;
-      }
-
-      container.innerHTML = `
-        <div class="table-responsive">
-          <table>
-            <thead>
-              <tr>
-                <th>Nombre del Objeto</th>
-                <th>Tamaño</th>
-                <th>Tipo MIME</th>
-                <th>Fecha de Creación</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${objects.map(obj => `
-                <tr>
-                  <td class="key-cell">${obj.key}</td>
-                  <td>
-                    ${formatBytes(obj.size)} 
-                    ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}
-                    ${obj.versions && obj.versions.length > 1 ? `<span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4);">${obj.versions.length} Versiones</span>` : ''}
-                  </td>
-                  <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType}</span></td>
-                  <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt).toLocaleDateString()}</td>
-                  <td>
-                    <a href="/api/balls/${encodeURIComponent(ballName)}/download/${encodeURIComponent(obj.key)}" download="${obj.key}" class="btn btn-sm" style="text-decoration: none;">📥 Descargar</a>
-                    <button class="btn btn-danger btn-sm" onclick="openDeleteObjectModal('${obj.key}')">🗑️</button>
-                  </td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-        </div>
-      `;
       } catch (err) {
         container.innerHTML = `<div style="color: #f87171; padding: 2rem; text-align: center;">⚠️ Error al cargar objetos: ${err.message}</div>`;
       }
     }
 
-    // Modal Control
     function openCreateBallModal() {
       document.getElementById('newBallInput').value = '';
       document.getElementById('createBallModal').classList.add('active');
@@ -737,69 +739,6 @@
       document.getElementById('renameBallInput').value = activeBall;
       document.getElementById('renameBallModal').classList.add('active');
       setTimeout(() => document.getElementById('renameBallInput').focus(), 100);
-    }
-
-    async function submitRenameBall() {
-      const input = document.getElementById('renameBallInput');
-      const newName = input.value.trim();
-      if (!newName || newName === activeBall) {
-        closeModal('renameBallModal');
-        return;
-      }
-
-      const btnSubmit = document.getElementById('btnSubmitRenameBall');
-      try {
-        btnSubmit.disabled = true;
-        btnSubmit.innerText = 'Guardando...';
-
-        const res = await fetch(`/api/balls/${encodeURIComponent(activeBall)}/rename`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ newName })
-        });
-
-        if (!res.ok) {
-          const errData = await res.json();
-          alert('Error al renombrar Rolla-Ball: ' + (errData.error || res.statusText));
-          return;
-        }
-
-        closeModal('renameBallModal');
-        const oldName = activeBall;
-        await loadBalls();
-        selectBall(newName);
-
-      } catch (err) {
-        alert('Error al conectar con el servidor: ' + err.message);
-      } finally {
-        btnSubmit.disabled = false;
-        btnSubmit.innerText = 'Guardar Nombre';
-      }
-    }
-
-    async function submitCreateBall() {
-      const input = document.getElementById('newBallInput');
-      const name = input.value.trim();
-      if (!name) return;
-
-      closeModal('createBallModal');
-      try {
-        const res = await fetch('/api/balls', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name })
-        });
-        if (!res.ok) {
-          const errData = await res.json();
-          alert('Error al crear Rolla-Ball: ' + (errData.error || res.statusText));
-          return;
-        }
-      } catch (err) {
-        alert('Error al conectar con el servidor: ' + err.message);
-        return;
-      }
-      await loadBalls();
-      selectBall(name);
     }
 
     function openDeleteBallModal() {
