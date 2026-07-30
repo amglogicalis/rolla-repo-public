@@ -657,17 +657,41 @@
           const res = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/tags/${tag}?_t=${Date.now()}`, {
             headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/vnd.github.v3+json' }
           });
+
           if (res.ok) {
             const release = await res.json();
             const manifestAsset = release.assets?.find(a => a.name === 'manifest.json');
+
             if (manifestAsset) {
-              const manifestRes = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/assets/${manifestAsset.id}`, {
-                headers: { 'Authorization': `token ${ghToken}`, 'Accept': 'application/octet-stream' }
-              });
-              if (manifestRes.ok) {
-                const manifest = await manifestRes.json();
-                objects = Object.values(manifest.objects || {});
+              try {
+                const manifestRes = await fetch(manifestAsset.browser_download_url);
+                if (manifestRes.ok) {
+                  const manifest = await manifestRes.json();
+                  objects = Object.values(manifest.objects || {});
+                }
+              } catch (e) {
+                // Fallback direct release assets list if manifest download fails
+                objects = (release.assets || [])
+                  .filter(a => a.name !== 'manifest.json')
+                  .map(a => ({
+                    key: a.name,
+                    size: a.size,
+                    contentType: a.content_type || 'application/octet-stream',
+                    createdAt: a.created_at,
+                    downloadUrl: a.browser_download_url
+                  }));
               }
+            } else {
+              // Si no hay manifest, mostrar assets directamente
+              objects = (release.assets || [])
+                .filter(a => a.name !== 'manifest.json')
+                .map(a => ({
+                  key: a.name,
+                  size: a.size,
+                  contentType: a.content_type || 'application/octet-stream',
+                  createdAt: a.created_at,
+                  downloadUrl: a.browser_download_url
+                }));
             }
           }
         } else {
@@ -706,11 +730,11 @@
                       ${obj.chunked ? '<span class="meta-tag">Chunked >2GB</span>' : ''}
                       ${obj.versions && obj.versions.length > 1 ? `<span class="meta-tag" style="background: rgba(132, 204, 22, 0.2); color: #a3e635; border-color: rgba(132, 204, 22, 0.4);">${obj.versions.length} Versiones</span>` : ''}
                     </td>
-                    <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType}</span></td>
-                    <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt).toLocaleDateString()}</td>
+                    <td><span style="font-size: 0.8rem; color: var(--text-muted);">${obj.contentType || 'binary'}</span></td>
+                    <td style="font-size: 0.8rem; color: var(--text-muted);">${new Date(obj.createdAt || Date.now()).toLocaleDateString()}</td>
                     <td>
-                      <a href="${obj.downloadUrl}" target="_blank" download="${obj.key}" class="btn btn-sm" style="text-decoration: none;">📥 Descargar</a>
-                      <button class="btn btn-danger btn-sm" onclick="deleteObjectWeb('${ballName}', '${obj.key}')">🗑️</button>
+                      <a href="${obj.downloadUrl || '#'}" target="_blank" download="${obj.key}" class="btn btn-sm" style="text-decoration: none;">📥 Descargar</a>
+                      <button class="btn btn-danger btn-sm" onclick="openDeleteObjectModal('${obj.key}')">🗑️</button>
                     </td>
                   </tr>
                 `).join('')}
@@ -720,6 +744,110 @@
         `;
       } catch (err) {
         container.innerHTML = `<div style="color: #f87171; padding: 2rem; text-align: center;">⚠️ Error al cargar objetos: ${err.message}</div>`;
+      }
+    }
+
+    function openCreateBallModal() {
+      document.getElementById('newBallInput').value = '';
+      document.getElementById('createBallModal').classList.add('active');
+      setTimeout(() => document.getElementById('newBallInput').focus(), 100);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    function openRenameBallModal() {
+      if (!activeBall) return;
+      document.getElementById('renameBallOldName').innerText = activeBall;
+      document.getElementById('renameBallInput').value = activeBall;
+      document.getElementById('renameBallModal').classList.add('active');
+      setTimeout(() => document.getElementById('renameBallInput').focus(), 100);
+    }
+
+    async function submitCreateBall() {
+      const input = document.getElementById('newBallInput');
+      const name = input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+      if (!name) return;
+
+      closeModal('createBallModal');
+      try {
+        if (isGitHubPages()) {
+          const owner = await getOwner();
+          const tag = `rolla-bkt-${name}`;
+          
+          const res = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases`, {
+            method: 'POST',
+            headers: { 'Authorization': `token ${ghToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag_name: tag, name: name, body: `Rolla Bucket: ${name}` })
+          });
+          if (!res.ok) throw new Error('Error al crear la Release en GitHub.');
+
+        } else {
+          const res = await fetch('/api/balls', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+          });
+          if (!res.ok) throw new Error('Error al crear la Rolla-Ball.');
+        }
+
+        await loadBalls();
+        selectBall(name);
+
+      } catch (err) {
+        alert('Error al crear Rolla-Ball: ' + err.message);
+      }
+    }
+
+    async function submitRenameBall() {
+      const input = document.getElementById('renameBallInput');
+      const newName = input.value.trim().toLowerCase().replace(/[^a-z0-9-_]/g, '-');
+      if (!newName || newName === activeBall) {
+        closeModal('renameBallModal');
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnSubmitRenameBall');
+      try {
+        btnSubmit.disabled = true;
+        btnSubmit.innerText = 'Guardando...';
+
+        if (isGitHubPages()) {
+          const owner = await getOwner();
+          const oldTag = `rolla-bkt-${activeBall.toLowerCase().trim()}`;
+          const newTag = `rolla-bkt-${newName}`;
+
+          const relRes = await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/tags/${oldTag}`, {
+            headers: { 'Authorization': `token ${ghToken}` }
+          });
+          if (!relRes.ok) throw new Error('No se encontró la Rolla-Ball original.');
+
+          const release = await relRes.json();
+          await fetch(`https://api.github.com/repos/${owner}/.rolla-storage/releases/${release.id}`, {
+            method: 'PATCH',
+            headers: { 'Authorization': `token ${ghToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tag_name: newTag, name: newName })
+          });
+
+        } else {
+          const res = await fetch(`/api/balls/${encodeURIComponent(activeBall)}/rename`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ newName })
+          });
+          if (!res.ok) throw new Error('Error al renombrar la Rolla-Ball.');
+        }
+
+        closeModal('renameBallModal');
+        await loadBalls();
+        selectBall(newName);
+
+      } catch (err) {
+        alert('Error al renombrar Rolla-Ball: ' + err.message);
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerText = 'Guardar Nombre';
       }
     }
 
