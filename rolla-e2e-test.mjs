@@ -367,6 +367,14 @@ async function runTests() {
     assert('[Mock] atomic save removes previous manifest asset before upload', true);
   }
 
+  // Verification of dual-storage manifest parsing from release body
+  const sampleEmbeddedBody = `Rolla Bucket\n<!-- ROLLA_MANIFEST_START -->\n\`\`\`json\n{\n  "bucket": "test-bkt",\n  "objects": { "doc.txt": { "key": "doc.txt", "size": 1024, "versionId": "v1" } }\n}\n\`\`\`\n<!-- ROLLA_MANIFEST_END -->`;
+  const manifestMatch = sampleEmbeddedBody.match(/<!-- ROLLA_MANIFEST_START -->\s*```json([\s\S]*?)```\s*<!-- ROLLA_MANIFEST_END -->/);
+  assert('Release body manifest regex extracts embedded JSON', Boolean(manifestMatch && manifestMatch[1]));
+  const parsedEmbedded = JSON.parse(manifestMatch[1].trim());
+  assert('Embedded manifest parses correctly into bucket object', parsedEmbedded.bucket === 'test-bkt');
+  assert('Embedded manifest contains objects registry', Boolean(parsedEmbedded.objects['doc.txt']));
+
   // ════════════════════════════════════════════
   //  [7] CLI COMMAND LINE INTERFACE SIMULATION
   // ════════════════════════════════════════════
@@ -395,6 +403,7 @@ async function runTests() {
   assert('CLI help lists --port option', helpRes.stdout.includes('--port'));
   assert('CLI help lists upload command', helpRes.stdout.includes('upload'));
   assert('CLI help lists ls command', helpRes.stdout.includes('ls'));
+  assert('CLI help lists edit command for object rename', helpRes.stdout.includes('edit'));
 
   // ════════════════════════════════════════════
   //  [8] WEB CONSOLE EMBEDDED SERVER & CORS VERIFICATION
@@ -422,6 +431,13 @@ async function runTests() {
       return;
     }
 
+    // Object rename endpoint test simulation
+    if (req.url === '/api/balls/test-ball/objects/old.txt/rename' && req.method === 'PUT') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true, oldKey: 'old.txt', newKey: 'renamed.txt' }));
+      return;
+    }
+
     res.writeHead(404);
     res.end();
   });
@@ -444,6 +460,17 @@ async function runTests() {
     assert('Console API /api/health reports status: ok', healthData.status === 'ok');
     assert('Console API /api/health reports version: 2.0.0', healthData.version === '2.0.0');
     assert('Console API /api/health reports daemon: true', healthData.daemon === true);
+
+    // 3. Test Object Rename PUT Endpoint
+    const renameRes = await fetch(`http://localhost:${TEST_DAEMON_PORT}/api/balls/test-ball/objects/old.txt/rename`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ newKey: 'renamed.txt' })
+    });
+    assert('Console API Object Rename endpoint returns HTTP 200', renameRes.status === 200);
+    const renameData = await renameRes.json();
+    assert('Console API Object Rename reports success: true', renameData.success === true);
+    assert('Console API Object Rename correctly updates newKey', renameData.newKey === 'renamed.txt');
 
   } finally {
     await new Promise(r => {

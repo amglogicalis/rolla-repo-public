@@ -1028,6 +1028,30 @@
     </div>
   </div>
 
+  <!-- 7. Edit / Rename Object Modal -->
+  <div id="editObjectModal" class="modal-overlay">
+    <div class="modal-dialog" style="max-width:460px;">
+      <div class="modal-header">
+        <h3>✏️ Editar / Renombrar Objeto</h3>
+        <button class="btn btn-sm" onclick="app.closeModal('editObjectModal')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editObjectOldKey">
+        <div class="form-group">
+          <label>Nombre / Clave del Objeto:</label>
+          <input type="text" id="editObjectNewKey" class="form-control" placeholder="nuevo-nombre.ext" onkeyup="if(event.key==='Enter') app.submitEditObject()">
+          <span style="font-size:0.72rem; color:var(--text-dim); margin-top:0.3rem; display:block;">
+            Actualiza el registro en el Manifest y mantiene todo el historial de versiones asociadas.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="app.closeModal('editObjectModal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="app.submitEditObject()">Guardar Cambios</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST CONTAINER -->
   <div id="toastContainer" class="toast-container"></div>
 
@@ -1308,6 +1332,14 @@
             if (!res.ok) throw new Error('Daemon returned ' + res.status);
           } else {
             const tag = `rolla-bkt-${rawName}`;
+            const initialManifest = {
+              bucket: rawName,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              objects: {}
+            };
+            const manifestStr = JSON.stringify(initialManifest, null, 2);
+
             const res = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases`, {
               method: 'POST',
               headers: {
@@ -1317,10 +1349,24 @@
               body: JSON.stringify({
                 tag_name: tag,
                 name: rawName,
-                body: `Rolla Bucket: ${rawName}`
+                body: `<!-- ROLLA_MANIFEST_START -->\n\`\`\`json\n${manifestStr}\n\`\`\`\n<!-- ROLLA_MANIFEST_END -->`
               })
             });
             if (!res.ok) throw new Error('Error al crear Release en GitHub');
+            const release = await res.json();
+
+            // Subir asset _manifest.json inicial
+            try {
+              const mUploadUrl = release.upload_url.replace('{?name,label}', '?name=_manifest.json');
+              await fetch(mUploadUrl, {
+                method: 'POST',
+                headers: {
+                  'Authorization': `token ${this.token}`,
+                  'Content-Type': 'application/json'
+                },
+                body: manifestStr
+              });
+            } catch {}
           }
 
           this.toast(`✔ Rolla-Ball '${rawName}' creada con éxito`, 'success');
@@ -1575,6 +1621,9 @@
                   <button class="btn btn-sm btn-primary" onclick="app.downloadObject('${encodeURIComponent(obj.key)}')">
                     ⬇️ Descargar
                   </button>
+                  <button class="btn btn-sm" title="Editar / Renombrar Objeto" onclick="app.openEditObjectModal('${encodeURIComponent(obj.key)}')">
+                    ✏️
+                  </button>
                   <button class="btn btn-sm btn-danger" onclick="app.openDeleteObjectModal('${encodeURIComponent(obj.key)}')">
                     🗑️
                   </button>
@@ -1589,19 +1638,199 @@
         this.renderObjectsTable();
       }
 
-      downloadObject(encodedKey, versionId) {
+      async downloadObject(encodedKey, versionId) {
         const key = decodeURIComponent(encodedKey);
         if (this.hasLocalDaemon) {
           const vParam = versionId ? `?versionId=${encodeURIComponent(versionId)}` : '';
           window.location.href = `${this.daemonUrl}/api/balls/${encodeURIComponent(this.activeBall)}/download/${encodeURIComponent(key)}${vParam}`;
-        } else {
-          // Direct URL from object metadata
+          return;
+        }
+
+        // Direct Cloud Mode Download
+        this.toast(`Descargando '${key}'...`, 'info');
+        try {
           const obj = this.objects.find(o => o.key === key);
-          if (obj?.downloadUrl) {
-            window.open(obj.downloadUrl, '_blank');
-          } else {
-            this.toast('URL de descarga directa no encontrada', 'error');
+          if (!obj) throw new Error('Objeto no encontrado en la lista');
+
+          let targetVersion = obj;
+          if (versionId && obj.versions) {
+            const v = obj.versions.find(x => x.versionId === versionId);
+            if (v) targetVersion = { ...obj, ...v };
           }
+
+          const tag = `rolla-bkt-${this.activeBall}`;
+          const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}?_t=${Date.now()}`, {
+            headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (!relRes.ok) throw new Error('Release no encontrada en GitHub');
+          const rel = await relRes.json();
+
+          if (targetVersion.chunked && targetVersion.chunks && targetVersion.chunks.length > 0) {
+            // Reensamblado de chunks en navegador
+            this.toast(`Reensamblando ${targetVersion.chunks.length} chunks de '${key}'...`, 'info');
+            const sortedChunks = [...targetVersion.chunks].sort((a, b) => a.index - b.index);
+            const chunkBlobs = [];
+
+            for (const ch of sortedChunks) {
+              const asset = (rel.assets || []).find(a => a.name === ch.name);
+              const assetUrl = asset ? asset.url : ch.downloadUrl;
+              const res = await fetch(assetUrl, {
+                headers: {
+                  'Authorization': `token ${this.token}`,
+                  'Accept': 'application/octet-stream'
+                }
+              });
+              if (!res.ok) throw new Error(`Fallo al descargar chunk ${ch.index}`);
+              const blob = await res.blob();
+              chunkBlobs.push(blob);
+            }
+
+            const assembledBlob = new Blob(chunkBlobs, { type: targetVersion.contentType || 'application/octet-stream' });
+            const blobUrl = URL.createObjectURL(assembledBlob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = key;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+            this.toast(`✔ '${key}' descargado y ensamblado con éxito`, 'success');
+
+          } else {
+            // Non-chunked object download via blob (handles private repos without login redirect)
+            const assetName = targetVersion.assetName || (targetVersion.versionId ? `${targetVersion.versionId}_${key}` : key);
+            const asset = (rel.assets || []).find(a => a.name === assetName || a.name === key);
+
+            if (asset && asset.url) {
+              const fileRes = await fetch(asset.url, {
+                headers: {
+                  'Authorization': `token ${this.token}`,
+                  'Accept': 'application/octet-stream'
+                }
+              });
+              if (fileRes.ok) {
+                const blob = await fileRes.blob();
+                const blobUrl = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = blobUrl;
+                a.download = key;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+                this.toast(`✔ '${key}' descargado con éxito`, 'success');
+                return;
+              }
+            }
+
+            // Fallback to direct download URL
+            if (obj?.downloadUrl) {
+              window.open(obj.downloadUrl, '_blank');
+            } else {
+              throw new Error('URL de descarga directa no encontrada');
+            }
+          }
+        } catch (err) {
+          this.toast('Error al descargar: ' + err.message, 'error');
+        }
+      }
+
+      openEditObjectModal(encodedKey) {
+        const key = decodeURIComponent(encodedKey);
+        document.getElementById('editObjectOldKey').value = key;
+        document.getElementById('editObjectNewKey').value = key;
+        this.openModal('editObjectModal');
+        setTimeout(() => document.getElementById('editObjectNewKey').focus(), 100);
+      }
+
+      async submitEditObject() {
+        const oldKey = document.getElementById('editObjectOldKey').value;
+        const newKey = document.getElementById('editObjectNewKey').value.trim();
+        if (!newKey || oldKey === newKey) {
+          this.closeModal('editObjectModal');
+          return;
+        }
+
+        this.closeModal('editObjectModal');
+        this.toast(`Renombrando objeto '${oldKey}' a '${newKey}'...`, 'info');
+
+        try {
+          if (this.hasLocalDaemon) {
+            const res = await fetch(`${this.daemonUrl}/api/balls/${encodeURIComponent(this.activeBall)}/objects/${encodeURIComponent(oldKey)}/rename`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ newKey })
+            });
+            if (!res.ok) throw new Error('Daemon rename error: ' + res.status);
+          } else {
+            // Direct Cloud Mode manifest rename
+            const tag = `rolla-bkt-${this.activeBall}`;
+            const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}?_t=${Date.now()}`, {
+              headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/vnd.github.v3+json' }
+            });
+            if (!relRes.ok) throw new Error('Release no encontrada');
+            const rel = await relRes.json();
+
+            let manifest = null;
+            if (rel.body && rel.body.includes('<!-- ROLLA_MANIFEST_START -->')) {
+              const match = rel.body.match(/<!-- ROLLA_MANIFEST_START -->\s*```json([\s\S]*?)```\s*<!-- ROLLA_MANIFEST_END -->/);
+              if (match && match[1]) {
+                try { manifest = JSON.parse(match[1].trim()); } catch {}
+              }
+            }
+            if (!manifest) {
+              const mAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+              if (mAsset) {
+                try {
+                  const mr = await fetch(mAsset.url, { headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/octet-stream' } });
+                  if (mr.ok) manifest = await mr.json();
+                } catch {}
+              }
+            }
+            if (!manifest) manifest = { bucket: this.activeBall, createdAt: rel.created_at, updatedAt: new Date().toISOString(), objects: {} };
+
+            const meta = manifest.objects[oldKey];
+            if (!meta) throw new Error(`Objeto '${oldKey}' no encontrado en manifest`);
+
+            meta.key = newKey;
+            if (meta.versions) {
+              meta.versions = meta.versions.map(v => ({ ...v, key: newKey }));
+            }
+            delete manifest.objects[oldKey];
+            manifest.objects[newKey] = meta;
+            manifest.updatedAt = new Date().toISOString();
+
+            const manifestStr = JSON.stringify(manifest, null, 2);
+            await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/${rel.id}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                body: `<!-- ROLLA_MANIFEST_START -->\n\`\`\`json\n${manifestStr}\n\`\`\`\n<!-- ROLLA_MANIFEST_END -->`
+              })
+            });
+
+            const oldMAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+            if (oldMAsset) {
+              try {
+                await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/assets/${oldMAsset.id}`, {
+                  method: 'DELETE',
+                  headers: { 'Authorization': `token ${this.token}` }
+                });
+              } catch {}
+            }
+            const mUploadUrl = rel.upload_url.replace('{?name,label}', '?name=_manifest.json');
+            await fetch(mUploadUrl, {
+              method: 'POST',
+              headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+              body: manifestStr
+            });
+          }
+
+          this.toast(`✔ Objeto renombrado a '${newKey}'`, 'success');
+          this.loadObjects(this.activeBall);
+
+        } catch (err) {
+          this.toast('Error al renombrar objeto: ' + err.message, 'error');
         }
       }
 
@@ -1626,21 +1855,73 @@
               method: 'DELETE'
             });
           } else {
-            // Direct GitHub deletion
+            // Direct GitHub deletion in Cloud Mode
             const tag = `rolla-bkt-${this.activeBall}`;
-            const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}`, {
-              headers: { 'Authorization': `token ${this.token}` }
+            const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}?_t=${Date.now()}`, {
+              headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/vnd.github.v3+json' }
             });
-            if (relRes.ok) {
-              const rel = await relRes.json();
-              const assets = (rel.assets || []).filter(a => a.name.includes(key));
-              for (const a of assets) {
-                await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/assets/${a.id}`, {
+            if (!relRes.ok) throw new Error('Release no encontrada');
+            const rel = await relRes.json();
+
+            // 1. Get manifest
+            let manifest = null;
+            if (rel.body && rel.body.includes('<!-- ROLLA_MANIFEST_START -->')) {
+              const match = rel.body.match(/<!-- ROLLA_MANIFEST_START -->\s*```json([\s\S]*?)```\s*<!-- ROLLA_MANIFEST_END -->/);
+              if (match && match[1]) {
+                try { manifest = JSON.parse(match[1].trim()); } catch {}
+              }
+            }
+            if (!manifest) {
+              const mAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+              if (mAsset) {
+                try {
+                  const mr = await fetch(mAsset.url, { headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/octet-stream' } });
+                  if (mr.ok) manifest = await mr.json();
+                } catch {}
+              }
+            }
+            if (!manifest) {
+              manifest = { bucket: this.activeBall, createdAt: rel.created_at, updatedAt: new Date().toISOString(), objects: {} };
+            }
+
+            // 2. Delete assets
+            const assets = (rel.assets || []).filter(a => a.name.includes(key));
+            for (const a of assets) {
+              await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/assets/${a.id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `token ${this.token}` }
+              });
+            }
+
+            // 3. Remove from manifest
+            delete manifest.objects[key];
+            manifest.updatedAt = new Date().toISOString();
+
+            // 4. Update release.body & _manifest.json
+            const manifestStr = JSON.stringify(manifest, null, 2);
+            await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/${rel.id}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                body: `<!-- ROLLA_MANIFEST_START -->\n\`\`\`json\n${manifestStr}\n\`\`\`\n<!-- ROLLA_MANIFEST_END -->`
+              })
+            });
+
+            const oldMAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+            if (oldMAsset) {
+              try {
+                await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/assets/${oldMAsset.id}`, {
                   method: 'DELETE',
                   headers: { 'Authorization': `token ${this.token}` }
                 });
-              }
+              } catch {}
             }
+            const mUploadUrl = rel.upload_url.replace('{?name,label}', '?name=_manifest.json');
+            await fetch(mUploadUrl, {
+              method: 'POST',
+              headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+              body: manifestStr
+            });
           }
 
           this.toast(`✔ Objeto '${key}' eliminado con éxito`, 'success');
@@ -1649,6 +1930,15 @@
         } catch (err) {
           this.toast('Error al eliminar objeto: ' + err.message, 'error');
         }
+      }
+
+      async calculateSha256(arrayBuffer) {
+        if (window.crypto && window.crypto.subtle) {
+          const hashBuffer = await window.crypto.subtle.digest('SHA-256', arrayBuffer);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+        return '';
       }
 
       // ─── UPLOAD SETUP & HANDLERS ──────────────────────────────────────────
@@ -1696,12 +1986,13 @@
 
         pContainer.style.display = 'block';
         pStatus.style.display = 'block';
-        pBar.style.width = '20%';
+        pBar.style.width = '10%';
 
         for (let i = 0; i < fileList.length; i++) {
           const file = fileList[i];
-          const isLarge = file.size > (1.8 * 1024 * 1024 * 1024);
-          pStatus.innerText = `Subiendo ${file.name} (${this.formatBytes(file.size)})${isLarge ? ' [🧩 Modo Chunking]' : ''}...`;
+          const CHUNK_LIMIT = 1.9 * 1024 * 1024 * 1024;
+          const isChunked = file.size > CHUNK_LIMIT;
+          pStatus.innerText = `Procesando ${file.name} (${this.formatBytes(file.size)})${isChunked ? ' [🧩 Modo Chunking >1.9GB]' : ''}...`;
 
           try {
             if (this.hasLocalDaemon) {
@@ -1718,29 +2009,169 @@
               pBar.style.width = '100%';
 
             } else {
-              // Direct GitHub Cloud Upload via base64 or buffer
-              pStatus.innerText = `[Cloud Mode] Subiendo asset '${file.name}' a GitHub...`;
+              // Direct GitHub Cloud Upload with Full Versioning, SHA-256 and Chunking
               const tag = `rolla-bkt-${this.activeBall}`;
-              const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}`, {
-                headers: { 'Authorization': `token ${this.token}` }
+              const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}?_t=${Date.now()}`, {
+                headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/vnd.github.v3+json' }
               });
               if (!relRes.ok) throw new Error('Release no encontrada en GitHub');
               const rel = await relRes.json();
 
-              // Upload asset directly
-              const uploadUrl = rel.upload_url.replace('{?name,label}', `?name=${encodeURIComponent(file.name)}`);
-              const res = await fetch(uploadUrl, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `token ${this.token}`,
-                  'Content-Type': file.type || 'application/octet-stream'
-                },
-                body: file
+              // 1. Obtener manifest actual
+              let manifest = null;
+              if (rel.body && rel.body.includes('<!-- ROLLA_MANIFEST_START -->')) {
+                const match = rel.body.match(/<!-- ROLLA_MANIFEST_START -->\s*```json([\s\S]*?)```\s*<!-- ROLLA_MANIFEST_END -->/);
+                if (match && match[1]) {
+                  try { manifest = JSON.parse(match[1].trim()); } catch {}
+                }
+              }
+              if (!manifest) {
+                const mAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+                if (mAsset) {
+                  try {
+                    const mr = await fetch(mAsset.url, { headers: { 'Authorization': `token ${this.token}`, 'Accept': 'application/octet-stream' } });
+                    if (mr.ok) manifest = await mr.json();
+                  } catch {}
+                }
+              }
+              if (!manifest) {
+                manifest = { bucket: this.activeBall, createdAt: rel.created_at, updatedAt: new Date().toISOString(), objects: {} };
+              }
+
+              // 2. Calcular versionId
+              const existingObj = manifest.objects[file.name];
+              const versionNumber = (existingObj?.versions?.length || 0) + 1;
+              const versionId = `v${versionNumber}_${Date.now()}`;
+              const assetPrefix = `${versionId}_${file.name}`;
+
+              let chunksInfo = undefined;
+              let mainDownloadUrl = '';
+              let fileSha256 = '';
+
+              if (isChunked) {
+                // Chunking en navegador usando slice()
+                const chunkSize = CHUNK_LIMIT;
+                const totalChunks = Math.ceil(file.size / chunkSize);
+                chunksInfo = [];
+
+                for (let cIdx = 0; cIdx < totalChunks; cIdx++) {
+                  const start = cIdx * chunkSize;
+                  const end = Math.min(start + chunkSize, file.size);
+                  const chunkBlob = file.slice(start, end);
+                  const chunkIndex = cIdx + 1;
+                  const chunkName = `${assetPrefix}_chunk_${String(chunkIndex).padStart(3, '0')}.bin`;
+
+                  pStatus.innerText = `Subiendo chunk ${chunkIndex}/${totalChunks} de ${file.name}...`;
+                  pBar.style.width = `${Math.round(((cIdx + 1) / totalChunks) * 85)}%`;
+
+                  const chunkBuf = await chunkBlob.arrayBuffer();
+                  const chunkSha = await this.calculateSha256(chunkBuf);
+
+                  const uploadUrl = rel.upload_url.replace('{?name,label}', `?name=${encodeURIComponent(chunkName)}`);
+                  const upRes = await fetch(uploadUrl, {
+                    method: 'POST',
+                    headers: {
+                      'Authorization': `token ${this.token}`,
+                      'Content-Type': 'application/octet-stream'
+                    },
+                    body: chunkBlob
+                  });
+                  if (!upRes.ok) throw new Error(`Error al subir chunk ${chunkIndex}`);
+                  const upAsset = await upRes.json();
+
+                  chunksInfo.push({
+                    index: chunkIndex,
+                    name: chunkName,
+                    size: chunkBlob.size,
+                    sha256: chunkSha,
+                    downloadUrl: upAsset.browser_download_url
+                  });
+                }
+                mainDownloadUrl = chunksInfo[0].downloadUrl;
+              } else {
+                // Objeto normal con hash SHA-256
+                pStatus.innerText = `Calculando hash SHA-256 de ${file.name}...`;
+                const buf = await file.arrayBuffer();
+                fileSha256 = await this.calculateSha256(buf);
+
+                pStatus.innerText = `Subiendo asset versionado '${assetPrefix}'...`;
+                pBar.style.width = '75%';
+
+                const uploadUrl = rel.upload_url.replace('{?name,label}', `?name=${encodeURIComponent(assetPrefix)}`);
+                const upRes = await fetch(uploadUrl, {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `token ${this.token}`,
+                    'Content-Type': file.type || 'application/octet-stream'
+                  },
+                  body: file
+                });
+                if (!upRes.ok) throw new Error('Error al subir asset a GitHub');
+                const upAsset = await upRes.json();
+                mainDownloadUrl = upAsset.browser_download_url;
+              }
+
+              // 3. Registrar versión en el Manifest
+              const versionEntry = {
+                versionId,
+                size: file.size,
+                contentType: file.type || 'application/octet-stream',
+                createdAt: new Date().toISOString(),
+                assetName: assetPrefix,
+                downloadUrl: mainDownloadUrl,
+                chunked: isChunked,
+                chunks: chunksInfo,
+                sha256: fileSha256
+              };
+
+              const existingVersions = manifest.objects[file.name]?.versions || [];
+              const updatedVersions = [...existingVersions, versionEntry];
+
+              manifest.objects[file.name] = {
+                key: file.name,
+                size: file.size,
+                contentType: file.type || 'application/octet-stream',
+                createdAt: versionEntry.createdAt,
+                chunked: isChunked,
+                chunks: chunksInfo,
+                downloadUrl: mainDownloadUrl,
+                versionId,
+                versions: updatedVersions,
+                sha256: fileSha256
+              };
+              manifest.updatedAt = new Date().toISOString();
+
+              // 4. Guardar Manifest actualizado en release.body y _manifest.json
+              const manifestStr = JSON.stringify(manifest, null, 2);
+              pStatus.innerText = `Sincronizando manifest y metadatos de ${file.name}...`;
+              pBar.style.width = '90%';
+
+              await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/${rel.id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  body: `<!-- ROLLA_MANIFEST_START -->\n\`\`\`json\n${manifestStr}\n\`\`\`\n<!-- ROLLA_MANIFEST_END -->`
+                })
               });
 
-              if (!res.ok) throw new Error('GitHub Asset upload error');
+              const oldMAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+              if (oldMAsset) {
+                try {
+                  await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/assets/${oldMAsset.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `token ${this.token}` }
+                  });
+                } catch {}
+              }
+              const mUploadUrl = rel.upload_url.replace('{?name,label}', '?name=_manifest.json');
+              await fetch(mUploadUrl, {
+                method: 'POST',
+                headers: { 'Authorization': `token ${this.token}`, 'Content-Type': 'application/json' },
+                body: manifestStr
+              });
             }
 
+            pBar.style.width = '100%';
             this.toast(`✔ Archivo '${file.name}' subido con éxito`, 'success');
 
           } catch (err) {
