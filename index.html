@@ -1460,20 +1460,48 @@
 
             if (res.ok) {
               const release = await res.json();
-              const manifestAsset = release.assets?.find(a => a.name === '_manifest.json');
+              let manifest = null;
 
-              if (manifestAsset) {
-                try {
-                  const mRes = await fetch(manifestAsset.browser_download_url);
-                  if (mRes.ok) {
-                    const manifest = await mRes.json();
+              // 1. Try reading from release body (fastest, zero-latency, immune to CORS and rate limits)
+              if (release.body && release.body.includes('<!-- ROLLA_MANIFEST_START -->')) {
+                const match = release.body.match(/<!-- ROLLA_MANIFEST_START -->\s*```json([\s\S]*?)```\s*<!-- ROLLA_MANIFEST_END -->/);
+                if (match && match[1]) {
+                  try {
+                    manifest = JSON.parse(match[1].trim());
                     objects = Object.values(manifest.objects || {});
-                  }
-                } catch {}
+                  } catch {}
+                }
               }
 
+              // 2. Try fetching the _manifest.json asset via GitHub API endpoint
+              if (!manifest || objects.length === 0) {
+                const manifestAsset = release.assets?.find(a => a.name === '_manifest.json');
+                if (manifestAsset) {
+                  try {
+                    const mRes = await fetch(manifestAsset.url, {
+                      headers: {
+                        'Authorization': `token ${this.token}`,
+                        'Accept': 'application/octet-stream'
+                      }
+                    });
+                    if (mRes.ok) {
+                      manifest = await mRes.json();
+                      objects = Object.values(manifest.objects || {});
+                    }
+                  } catch {
+                    try {
+                      const fbRes = await fetch(manifestAsset.browser_download_url);
+                      if (fbRes.ok) {
+                        manifest = await fbRes.json();
+                        objects = Object.values(manifest.objects || {});
+                      }
+                    } catch {}
+                  }
+                }
+              }
+
+              // 3. Fallback direct assets
               if (objects.length === 0) {
-                // Fallback direct assets
                 objects = (release.assets || [])
                   .filter(a => a.name !== '_manifest.json')
                   .map(a => ({
@@ -1739,22 +1767,84 @@
         try {
           let manifest = null;
           if (this.hasLocalDaemon) {
-            const res = await fetch(`${this.daemonUrl}/api/balls/${encodeURIComponent(this.activeBall)}/manifest`);
-            if (res.ok) manifest = await res.json();
-          } else {
+            try {
+              const res = await fetch(`${this.daemonUrl}/api/balls/${encodeURIComponent(this.activeBall)}/manifest`);
+              if (res.ok) manifest = await res.json();
+            } catch (daemonErr) {
+              console.warn('Daemon manifest fetch error, fallback to GitHub API:', daemonErr);
+            }
+          }
+
+          if (!manifest) {
             const tag = `rolla-bkt-${this.activeBall}`;
             const relRes = await fetch(`https://api.github.com/repos/${this.owner}/${this.storageRepo}/releases/tags/${tag}`, {
-              headers: { 'Authorization': `token ${this.token}` }
+              headers: {
+                'Authorization': `token ${this.token}`,
+                'Accept': 'application/vnd.github.v3+json'
+              }
             });
             if (relRes.ok) {
               const rel = await relRes.json();
-              const mAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
-              if (mAsset) {
-                const mRes = await fetch(mAsset.browser_download_url);
-                if (mRes.ok) manifest = await mRes.json();
+
+              // 1. Lectura instantánea desde release.body si existe el bloque embebido
+              if (rel.body && rel.body.includes('<!-- ROLLA_MANIFEST_START -->')) {
+                const match = rel.body.match(/<!-- ROLLA_MANIFEST_START -->\s*```json([\s\S]*?)```\s*<!-- ROLLA_MANIFEST_END -->/);
+                if (match && match[1]) {
+                  try {
+                    manifest = JSON.parse(match[1].trim());
+                  } catch {}
+                }
               }
+
+              // 2. Descarga del asset _manifest.json vía GitHub API endpoint
+              if (!manifest) {
+                const mAsset = (rel.assets || []).find(a => a.name === '_manifest.json');
+                if (mAsset) {
+                  try {
+                    const mRes = await fetch(mAsset.url, {
+                      headers: {
+                        'Authorization': `token ${this.token}`,
+                        'Accept': 'application/octet-stream'
+                      }
+                    });
+                    if (mRes.ok) manifest = await mRes.json();
+                  } catch (apiErr) {
+                    try {
+                      const fbRes = await fetch(mAsset.browser_download_url);
+                      if (fbRes.ok) manifest = await fbRes.json();
+                    } catch {}
+                  }
+                }
+              }
+
+              // 3. Fallback: síntesis segura del manifest desde assets de la release
+              if (!manifest) {
+                const fallbackObjects = {};
+                (rel.assets || [])
+                  .filter(a => a.name !== '_manifest.json')
+                  .forEach(a => {
+                    fallbackObjects[a.name] = {
+                      key: a.name,
+                      size: a.size,
+                      contentType: a.content_type || 'application/octet-stream',
+                      createdAt: a.created_at,
+                      downloadUrl: a.browser_download_url,
+                      chunked: false,
+                      versionId: 'v1'
+                    };
+                  });
+                manifest = {
+                  bucket: this.activeBall,
+                  createdAt: rel.created_at,
+                  updatedAt: rel.published_at || rel.created_at,
+                  objects: fallbackObjects
+                };
+              }
+            } else {
+              throw new Error(`No se pudo obtener la información de la release (HTTP ${relRes.status})`);
             }
           }
+
           view.innerText = JSON.stringify(manifest || { error: '_manifest.json aún no inicializado' }, null, 2);
         } catch (err) {
           view.innerText = 'Error leyendo manifest: ' + err.message;
