@@ -2,12 +2,13 @@
 
   <img src="rolla_logo.png" alt="Rolla Storage Engine Logo" width="140" style="filter: drop-shadow(0 0 20px rgba(132, 204, 22, 0.4)); margin-bottom: 1rem;">
 
-  # 📦 ROLLA STORAGE ENGINE
-  ### *Motor de Almacenamiento de Objetos Inmutable e Ilimitado a Coste $0*
+  # 📦 ROLLA STORAGE ENGINE v2.0
+  ### *Motor de Almacenamiento de Objetos Inmutable e Ilimitado a Coste $0 para el Ecosistema Terra*
 
   [![npm version](https://img.shields.io/npm/v/terra-rolla.svg?style=for-the-badge&logo=npm&logoColor=white&color=84cc16)](https://www.npmjs.com/package/terra-rolla)
   [![Ecosistema Terra](https://img.shields.io/badge/Ecosistema-Terra-blue?style=for-the-badge&logo=planetScale&logoColor=white)](https://github.com/amglogicalis/Terra)
   [![Consola Web 24/7](https://img.shields.io/badge/Consola%20Web-Desplegada-2ea043?style=for-the-badge&logo=github&logoColor=white)](https://amglogicalis.github.io/rolla-repo-public/)
+  [![E2E Tests](https://img.shields.io/badge/E2E%20Tests-100%25%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/amglogicalis/rolla-repo-public/blob/main/rolla-e2e-test.mjs)
   [![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-purple?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
 </div>
@@ -16,125 +17,128 @@
 
 ## 📌 Visión General
 
-**Rolla** (`terra-rolla`) es un motor de almacenamiento de objetos inmutable de alto rendimiento (estilo AWS S3) diseñado para el ecosistema **Terra**. Utiliza la infraestructura global de **GitHub Releases & Assets** alojada en la nube de GitHub sobre un repositorio privado (`.rolla-storage`) para ofrecer espacio de almacenamiento ilimitado a **coste $0** sin saturar ramas ni repositorios Git.
+**Rolla** (`terra-rolla`) es el motor de almacenamiento de objetos inmutable (estilo AWS S3) del **Ecosistema Terra**. Respaldado íntegramente sobre **GitHub Releases & Assets** en tu repositorio privado (`.rolla-storage`), proporciona almacenamiento masivo a **coste económico $0**, sin saturar el historial de Git, con versionado de archivos, chunking automático para ficheros gigantes y **cero dependencias de proveedores externos (cero Cloudflare)**.
 
 ---
 
-## 🚀 Instalación Rápida
+## 🚀 Instalación
 
-### 🌐 Instalación Global de la CLI (Terminal):
+### 🌐 CLI Global (Terminal):
 ```bash
 npm install -g terra-rolla
 ```
 
-### 📦 Instalación en Proyectos (SDK TypeScript / JavaScript):
+### 📦 En proyectos Node.js / TypeScript (SDK):
 ```bash
 npm install terra-rolla
 ```
 
 ---
 
-## 📸 Vista Previa de la Consola Web
+## 🌟 Características Clave
 
-<div align="center">
-  <img src="cap_preview_console_web.PNG" alt="Rolla Web Console Interface Preview" width="100%" style="border-radius: 12px; border: 1px solid rgba(132, 204, 22, 0.3); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-</div>
-
----
-
-## 🌟 Características Destacadas
-
-- ♾️ **Coste $0 y Almacenamiento Ilimitado**: Aprovecha la CDN de Releases de GitHub sin cuotas de subida ni suscripciones.
-- 📦 **Rolla-Balls (Buckets)**: Mapeadas internamente como Releases firmadas con tags git `rolla-bkt-<nombre>`.
-- 🔄 **Versionado Automático de Objetos (v1.1.0)**: Al volver a subir un objeto con el mismo nombre, se guarda un historial inmutable de versiones permitiendo recuperar cualquier versión previa.
-- ⚡ **Sincronización Instantánea**: Consulta de tags vía Git Refs (`/git/refs/tags`) eliminando latencias de caché.
-- 🧩 **Automatic Chunking (>2 GB)**: División y ensamblado transparente para archivos gigantescos.
-- 🌐 **Consola Web Estática (GitHub Pages)**: Interfaz cliente 24/7 totalmente responsive para PC y dispositivos móviles.
-- 💻 **CLI & Servidor Local**: Herramienta de consola para terminal y servidor local de desarrollo.
-- 🔒 **Seguridad y Privacidad**: Tu token PAT se guarda localmente en tu cliente (`localStorage`), jamás en servidores externos.
+- ♾️ **Coste $0 y Almacenamiento Ilimitado**: Infraestructura en la nube sobre GitHub Releases & Assets en tu repositorio privado `.rolla-storage`.
+- 🛡️ **100% Desacoplado de Cloudflare**: Opera directamente de forma nativa con el motor de GitHub y la arquitectura Terra sin intermediarios ni proxies externos.
+- 📦 **Rolla-Balls (Buckets)**: Contenedores mapeados como Releases de GitHub con tags canónicos `rolla-bkt-<nombre>`.
+- ⚡ **Consistencia Inmediata (Zero-Cache)**: Consulta tags mediante Git Refs (`/git/refs/tags`) eliminando los 60 segundos de caché del CDN de Releases.
+- 🧩 **Deep Chunking Engine (> 1.9 GB)**: División automática y reensamblado secuencial con verificación de integridad criptográfica SHA-256 byte a byte.
+- 🕒 **Historial de Versionado Inmutable**: Cada subida de un mismo archivo almacena una nueva versión (`v1`, `v2`...), permitiendo consultar y descargar cualquier versión anterior.
+- 📋 **Catálogo `_manifest.json` Atómico**: Metadatos centralizados, tipos MIME, tamaños, hashes SHA-256 y mapa de fragmentos.
+- 🖥️ **Consola Web Terra 2.0 (Dual-Mode)**: Interfaz glassmorphic moderna con pop-up clásico de autenticación con GitHub PAT, panel de perfil con botón de cierre de sesión, explorador interactivo y drag & drop.
+- 💻 **CLI Potente con Puerto Configurable**: Lanza la consola con `rolla console --port 3750` con auto-resolución de conflictos de puerto (`EADDRINUSE`).
 
 ---
 
-## 💻 Todos los Comandos del CLI (`rolla`)
-
-La herramienta CLI de **Rolla** permite gestionar tus objetos y lanzar consolas de desarrollo desde cualquier terminal:
+## 💻 Comandos del CLI (`rolla`)
 
 | Comando | Descripción | Ejemplo de Uso |
 | :--- | :--- | :--- |
-| `rolla console` | **Lanza la Consola Web local** en tu navegador (`http://localhost:3000`). | `rolla console` |
-| `rolla console --logs` | Lanza la consola web local mostrando en terminal los **logs detallados** de peticiones HTTP, eventos y errores. | `rolla console --logs` |
-| `rolla console --port <puerto>` | Especifica un **puerto personalizado** para la consola web en caso de conflicto. | `rolla console --port 8080` |
-| `rolla ls` | **Lista todas las Rolla-Balls (buckets)** existentes en tu cuenta. | `rolla ls` |
-| `rolla create <ball-name>` | **Crea una nueva Rolla-Ball** en la nube. | `rolla create fotos-2026` |
-| `rolla rename <old-name> <new-name>` | **Renombra una Rolla-Ball** existente. | `rolla rename fotos-2026 galeria-2026` |
-| `rolla rm <ball-name>` | **Elimina una Rolla-Ball** y todos los objetos contenidos. | `rolla rm fotos-2026` |
-| `rolla ls <ball-name>` | **Lista los objetos y archivos** dentro de una Rolla-Ball específica. | `rolla ls fotos-2026` |
-| `rolla upload <ball-name> <file-path>` | **Subir un archivo** a la Rolla-Ball especificada. | `rolla upload fotos-2026 ./imagen.png` |
-| `rolla rm <ball-name> <key>` | **Elimina un objeto** de una Rolla-Ball. | `rolla rm fotos-2026 imagen.png` |
+| `rolla console` | **Lanza la Consola Web local** en tu navegador (puerto por defecto: `3750`). | `rolla console` |
+| `rolla console --port <puerto>` | Especifica un **puerto personalizado** (ej. 3750, 8080). | `rolla console --port 3750` |
+| `rolla console --logs` | Lanza la consola mostrando **logs HTTP detallados** en terminal. | `rolla console --logs` |
+| `rolla studio` | Alias de `rolla console`. | `rolla studio` |
+| `rolla ls` | **Lista todas las Rolla-Balls** registradas en `.rolla-storage`. | `rolla ls` |
+| `rolla ls <ball>` | **Lista los objetos y versiones** dentro de una Ball. | `rolla ls fotos-2026` |
+| `rolla create <ball>` | **Crea una nueva Rolla-Ball** de forma atómica. | `rolla create backups-prod` |
+| `rolla upload <ball> <file> [key]` | **Sube un archivo** (soporta chunking automático si excede 1.9 GB). | `rolla upload fotos-2026 ./dataset.tar.gz` |
+| `rolla rename <ball> <nuevo-nombre>` | **Renombra una Rolla-Ball** actualizando tags y manifest. | `rolla rename fotos-2026 fotos-archivo` |
+| `rolla rm <ball> [key]` | **Elimina un objeto específico** o una Rolla-Ball completa. | `rolla rm fotos-2026 dataset.tar.gz` |
+| `rolla version` | Muestra la versión actual instalada de `terra-rolla`. | `rolla version` |
 
 ---
 
-## 🌐 Uso desde la Consola Web Estática (GitHub Pages)
+## 🌐 Consola Web Online 24/7 (GitHub Pages)
 
-Accede a la Consola Web desplegada 24/7 desde cualquier navegador de ordenador o teléfono móvil:
+Accede a la consola web estática desde cualquier navegador de escritorio o móvil:
 
 👉 **[https://amglogicalis.github.io/rolla-repo-public/](https://amglogicalis.github.io/rolla-repo-public/)**
 
-1. Ingresa tu **GitHub Personal Access Token (PAT)** con permisos de `repo`.
-2. Crea tus **Rolla-Balls** de forma visual.
-3. Arrastra y sube archivos o imágenes sin límites de tamaño ni errores CORS.
-4. Visualiza los distintivos de **versiones acumuladas** en cada objeto.
+1. Haz clic en **🔑 Conectar PAT** e introduce tu GitHub Personal Access Token con permiso `repo`.
+2. Tu sesión se mantendrá en tu cliente con indicador de perfil y botón de cierre de sesión **🚪 Salir**.
+3. Arrastra archivos al recuadro de subida o crea Rolla-Balls en un solo clic.
 
 ---
 
-## 🚀 Uso desde el SDK (TypeScript / JavaScript)
-
-```bash
-npm install terra-rolla
-```
+## 🚀 Uso del SDK (TypeScript / JavaScript)
 
 ```typescript
 import { Rolla } from 'terra-rolla';
 
 const rolla = new Rolla({
-  githubToken: process.env.GITHUB_TOKEN // Tu GitHub PAT con permisos de repo
+  githubToken: process.env.GITHUB_TOKEN!,
+  storageRepo: '.rolla-storage' // Opcional, por defecto .rolla-storage
 });
 
-// 1. Crear un contenedor (Rolla-Ball)
+// 1. Crear una Rolla-Ball (Bucket)
 await rolla.createBall('imagenes-prod');
 
-// 2. Subir un archivo
-await rolla.putObject('imagenes-prod', 'fotografia.png', bufferData, {
+// 2. Subir un archivo (con cálculo automático de SHA-256 y versionado)
+const metadata = await rolla.putObject('imagenes-prod', 'foto.png', bufferData, {
   contentType: 'image/png'
 });
+console.log(`Subido: ${metadata.key} (v${metadata.versionId}) - SHA256: ${metadata.sha256}`);
 
-// 3. Listar archivos (devuelve la versión más reciente por defecto)
+// 3. Listar archivos de la Ball
 const objects = await rolla.listObjects('imagenes-prod');
 console.log(objects);
 
 // 4. Descargar la última versión del archivo
-const buffer = await rolla.getObject('imagenes-prod', 'fotografia.png');
+const buffer = await rolla.getObject('imagenes-prod', 'foto.png');
 
-// 5. Historial de Versiones (Object Versioning)
-// Al re-subir un objeto con el mismo nombre, Rolla guarda automáticamente las versiones sin sobrescribir las anteriores
-await rolla.putObject('imagenes-prod', 'fotografia.png', nuevoBufferData);
+// 5. Versionado de Objetos
+// Subir una nueva versión de 'foto.png'
+await rolla.putObject('imagenes-prod', 'foto.png', nuevoBufferData);
 
-// Listar todas las versiones de un objeto
-const versiones = await rolla.listObjectVersions('imagenes-prod', 'fotografia.png');
-console.log(versiones);
+// Listar todas las versiones registradas
+const versiones = await rolla.listObjectVersions('imagenes-prod', 'foto.png');
+console.log(versiones); // [{ versionId: 'v1_...', ... }, { versionId: 'v2_...', ... }]
 
-// Descargar una versión específica antigua usando su versionId
-const bufferV1 = await rolla.getObject('imagenes-prod', 'fotografia.png', { versionId: versiones[0].versionId });
+// Descargar una versión previa específica
+const bufferV1 = await rolla.getObject('imagenes-prod', 'foto.png', { versionId: versiones[0].versionId });
+
+// 6. Eliminar una versión o el objeto completo
+await rolla.deleteObject('imagenes-prod', 'foto.png'); // Elimina todas las versiones
+await rolla.deleteBall('imagenes-prod'); // Elimina la Ball completa
 ```
+
+---
+
+## 🧪 Pruebas E2E (End-to-End)
+
+El repositorio cuenta con una suite integral de verificación con **43/43 tests superados (100% éxito)**:
+
+```bash
+node rolla-e2e-test.mjs
+```
+
+Verifica:
+- 🧩 **Chunking (> 1.9 GB)**: División en chunks (`_chunk_001.bin`...), hashes SHA-256 por fragmento, reensamblado bit a bit y detección de corrupción de datos.
+- ⚡ **Git Refs**: Consistencia instantánea al crear y renombrar Rolla-Balls.
+- 🕒 **Versionado**: Inmutabilidad, recuperación por `versionId` y eliminación granular.
+- 💻 **CLI y Daemon**: Parseo de `--port`, preflight CORS y salud de la consola.
 
 ---
 
 ## 📜 Licencia
 
-Este proyecto está distribuido bajo la **Licencia MIT**. Siéntete libre de modificarlo, distribuirlo y usarlo en tus aplicaciones privadas o comerciales.
-
----
-
-<div align="center">
-  <sub>Desarrollado con ❤️ para el Ecosistema Terra</sub>
-</div>
+Distribuido bajo la **Licencia MIT**. Desarrollado con ❤️ para el **Ecosistema Terra**.
