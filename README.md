@@ -11,20 +11,16 @@
   [![E2E Tests](https://img.shields.io/badge/E2E%20Tests-50%2F50%20Passed-brightgreen?style=for-the-badge&logo=vitest&logoColor=white)](https://github.com/amglogicalis/rolla-repo-public/blob/main/rolla-e2e-test.mjs)
   [![Licencia MIT](https://img.shields.io/badge/Licencia-MIT-purple?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-  <p align="center">
-    <a href="https://amglogicalis.github.io/rolla-repo-public/">
-      <img src="https://img.shields.io/badge/🚀%20Abrir%20Consola%20Web%20Online-amglogicalis.github.io%2Frolla--repo--public-84cc16?style=for-the-badge&labelColor=0f172a" alt="Abrir Consola Web Online" height="38">
-    </a>
-  </p>
-
 </div>
 
 ---
 
 <div align="center">
 
-### 🖥️ Consola Web Rolla 2.0 (Vista Previa)
+### 🖥️ Consola Web Rolla 2.0
 [![Consola Web Rolla](assets/cap_preview_console_web_rolla.png)](https://amglogicalis.github.io/rolla-repo-public/)
+
+🌐 **Consola Web Online:** [https://amglogicalis.github.io/rolla-repo-public/](https://amglogicalis.github.io/rolla-repo-public/)  
 *Interfaz moderna Glassmorphic con soporte dual: Online 24/7 en GitHub Pages y servidor local integrado en CLI.*
 
 </div>
