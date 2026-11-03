@@ -522,6 +522,7 @@
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      word-break: break-all;
     }
 
     .chunk-badge {
@@ -538,15 +539,27 @@
     }
 
     .version-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.28rem;
+      white-space: nowrap;
       background: rgba(132, 204, 22, 0.15);
       border: 1px solid rgba(132, 204, 22, 0.35);
       color: #bef264;
       font-family: var(--font-mono);
-      font-size: 0.7rem;
-      padding: 0.12rem 0.4rem;
+      font-size: 0.72rem;
+      line-height: 1.2;
+      padding: 0.22rem 0.55rem;
       border-radius: var(--radius-sm);
       font-weight: 600;
       cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .version-pill:hover {
+      background: rgba(132, 204, 22, 0.25);
+      border-color: var(--rolla-lime);
     }
 
     .empty-state {
@@ -1608,15 +1621,16 @@
                   ${obj.chunked ? '<span class="chunk-badge">🧩 Chunked</span>' : ''}
                 </div>
               </td>
-              <td style="font-family:var(--font-mono);">${sizeStr}</td>
-              <td>
-                <span class="version-pill" onclick="app.openVersionsModal('${encodeURIComponent(obj.key)}')">
-                  ${currentVersion} (${versionCount})
+              <td style="font-family:var(--font-mono); white-space:nowrap;">${sizeStr}</td>
+              <td style="white-space:nowrap;">
+                <span class="version-pill" onclick="app.openVersionsModal('${encodeURIComponent(obj.key)}')" title="Ver historial de versiones">
+                  <span>${currentVersion}</span>
+                  <span style="opacity:0.8;">(${versionCount})</span>
                 </span>
               </td>
-              <td style="font-size:0.75rem; color:var(--text-muted);">${obj.contentType || 'binary'}</td>
-              <td style="font-size:0.75rem; color:var(--text-dim);">${dateStr}</td>
-              <td style="text-align:right;">
+              <td style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">${obj.contentType || 'binary'}</td>
+              <td style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap;">${dateStr}</td>
+              <td style="text-align:right; white-space:nowrap;">
                 <div style="display:inline-flex; gap:0.4rem;">
                   <button class="btn btn-sm btn-primary" onclick="app.downloadObject('${encodeURIComponent(obj.key)}')">
                     ⬇️ Descargar
